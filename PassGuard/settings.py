@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'user_app.apps.UserAppConfig',
     'vault_app.apps.VaultAppConfig',
+    'credential_app.apps.CredentialAppConfig',
 ]
 
 MIDDLEWARE = [
