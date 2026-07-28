@@ -43,3 +43,36 @@ class Credential(models.Model):
         )
 
 
+class CredentialHistory(models.Model):
+    credential = models.ForeignKey(
+        Credential,
+        on_delete=models.CASCADE,
+        related_name="password_history",
+    )
+    old_password_ciphertext = models.TextField()
+    new_password_ciphertext = models.TextField()
+    created_at = models.DateTimeField(
+        auto_now_add=True
+    )
+
+
+    class Meta:
+        verbose_name = "Credential History"
+        verbose_name_plural = "Credential History"
+        ordering = ["-created_at"]
+
+        indexes = [
+            models.Index(
+                fields=[
+                    "credential",
+                    "-created_at",
+                ]
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"{self.credential.vault.user.username} | "
+            f"{self.credential.service_name} | "
+            f"{self.created_at:%Y-%m-%d %H:%M}"
+        )
