@@ -13,7 +13,7 @@ class Credential(models.Model):
     service_url = models.URLField(null=True, blank=True)
     login_username = models.CharField(max_length=100)
     login_email = models.EmailField(null=True, blank=True)
-    password_ciphertext = models.CharField(max_length=100)
+    password_ciphertext = models.TextField()
     is_favorite = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,7 +35,11 @@ class Credential(models.Model):
             )
         ]
 
-
     def __str__(self):
-        return f"{self.vault.user} - {self.service_name}"
+        return (
+            f"{self.vault.user.username} | "
+            f"{self.vault.name} | "
+            f"{self.service_name}"
+        )
+
 
