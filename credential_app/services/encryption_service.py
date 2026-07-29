@@ -12,14 +12,23 @@ class EncryptionService:
     """
 
     _cipher = Fernet(settings.FERNET_KEY.encode())
+
     @classmethod
     def encrypt(cls, plaintext: str) -> str:
         """
-        Encrypts plain text password.
+        Encrypt a plain text password.
         """
         encrypted = cls._cipher.encrypt(
             plaintext.encode() # Formating plain text into bytes for encryption
         )
         return encrypted.decode() # Formating bytes into characters that encrypted
 
-
+    @classmethod
+    def decrypt(cls, ciphertext: str) -> str:
+        """
+        Decrypt an encrypted password.
+        """
+        decrypted = cls._cipher.decrypt(
+            ciphertext.encode()
+        )
+        return decrypted.decode() 
