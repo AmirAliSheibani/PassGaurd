@@ -131,6 +131,10 @@ USE_I18N = True
 USE_TZ = True
 
 
+# Fernet Key (Encryption)
+FERNET_KEY = env('FERNET_KEY')
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
