@@ -22,3 +22,25 @@ class CredentialService:
             **data
         )
         return credential
+
+    @classmethod
+    @transaction.atomic
+    def update(cls, *, credential: Credential, data: dict,) -> Credential:
+        """
+        Update an existing credential.
+        anything except password
+        """
+        payload = data.copy()
+        plaintext_password = payload.pop("password", None)
+        payload.pop("password_ciphertext", None)
+
+        for field, value in payload.items():
+            setattr(credential, field, value,)
+
+        credential.save(
+            update_fields=[
+                *payload.keys(),
+                "updated_at",
+            ]
+        )
+        return credential
