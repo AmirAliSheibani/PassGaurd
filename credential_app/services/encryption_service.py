@@ -26,7 +26,7 @@ class EncryptionService:
             return encrypted.decode() # Formating bytes into characters that encrypted
         except InvalidToken as exc:
             raise EncryptionError(
-                "Unable to encrypt."
+                "Unable to encrypt credential."
             )
 
     @classmethod
@@ -41,6 +41,6 @@ class EncryptionService:
             return decrypted.decode()
         except InvalidToken as exc:
             raise EncryptionError(
-                "Unable to decrypt"
+                "Unable to decrypt credential."
             ) from exc
 
