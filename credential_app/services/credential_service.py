@@ -2,6 +2,7 @@ from django.db import transaction
 
 from vault_app.models import Vault
 from .encryption_service import EncryptionService
+from .exceptions import DuplicateCredential
 from ..models import Credential, CredentialHistory
 
 
@@ -9,7 +10,7 @@ class CredentialService:
 
     @classmethod
     @transaction.atomic
-    def create(cls, *, vault, data):
+    def create(cls, *, vault: Vault, data: dict) -> Credential:
         """
         Create a new credential with an encrypted password.
         """
@@ -20,7 +21,7 @@ class CredentialService:
 
         credential = Credential.objects.create(
             vault=vault,
-            **data
+            **payload
         )
         return credential
 
@@ -33,7 +34,7 @@ class CredentialService:
         anything except password
         """
         payload = data.copy()
-        plaintext_password = payload.pop("password", None)
+        payload.pop("password", None)
         payload.pop("password_ciphertext", None)
 
         for field, value in payload.items():
@@ -95,6 +96,10 @@ class CredentialService:
         ).exclude(
             pk=credential.pk
         ).exists() # Each service name for credentials should be unique in each vaults
+        if exists:
+            raise DuplicateCredential(
+                "credential already exists in target vault.",
+            )
 
         credential.vault = vault
         credential.save(update_fields=["vault", "updated_at"])
@@ -103,13 +108,11 @@ class CredentialService:
 
     @classmethod
     @transaction.atomic
-    def delete(cls, credential: Credential) -> Credential:
+    def delete(cls, credential: Credential) -> int:
+        """
+        delete a credential.
+        """
         credential_id = credential.pk
         credential.delete()
         return credential_id
-
-
-
-
-
 
