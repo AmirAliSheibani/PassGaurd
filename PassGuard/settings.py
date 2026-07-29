@@ -132,7 +132,7 @@ USE_TZ = True
 
 
 # Fernet Key (Encryption)
-FERNET_KEY = env('FERNET_KEY')
+FERNET_KEY = env("FERNET_KEY")
 
 
 # Static files (CSS, JavaScript, Images)
