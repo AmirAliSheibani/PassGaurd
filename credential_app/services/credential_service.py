@@ -1,7 +1,7 @@
 from django.db import transaction
 
 from .encryption_service import EncryptionService
-from ..models import Credential
+from ..models import Credential, CredentialHistory
 
 
 class CredentialService:
@@ -22,6 +22,7 @@ class CredentialService:
             **data
         )
         return credential
+
 
     @classmethod
     @transaction.atomic
@@ -44,3 +45,27 @@ class CredentialService:
             ]
         )
         return credential
+
+
+    @classmethod
+    @transaction.atomic
+    def rotate_password(cls, *, credential: Credential, new_password: str) -> Credential:
+        """
+        update an existing credential password and
+        create an object on CredentialHistory to log rotate password.
+        """
+        old_ciphertext = credential.password_ciphertext
+        new_ciphertext = EncryptionService.encrypt(new_password)
+
+        credential.password_ciphertext = new_ciphertext
+        credential.save(update_fields=["password_ciphertext", "updated_at"])
+
+        CredentialHistory.objects.create(
+            credential=credential,
+            old_password_ciphertext=old_ciphertext,
+            new_password_ciphertext=new_ciphertext,
+        )
+
+        return credential
+
+    
