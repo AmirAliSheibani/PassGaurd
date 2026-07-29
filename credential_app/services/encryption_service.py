@@ -1,5 +1,6 @@
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
+from .exceptions import EncryptionError
 
 # Use this generated key for your encryptions, add it on your .env
 # key = Fernet.generate_key().decode()
@@ -18,18 +19,28 @@ class EncryptionService:
         """
         Encrypt a plain text password.
         """
-        encrypted = cls._cipher.encrypt(
-            plaintext.encode() # Formating plain text into bytes for encryption
-        )
-        return encrypted.decode() # Formating bytes into characters that encrypted
+        try:
+            encrypted = cls._cipher.encrypt(
+                plaintext.encode() # Formating plain text into bytes for encryption
+            )
+            return encrypted.decode() # Formating bytes into characters that encrypted
+        except InvalidToken as exc:
+            raise EncryptionError(
+                "Unable to encrypt."
+            )
 
     @classmethod
     def decrypt(cls, ciphertext: str) -> str:
         """
         Decrypt an encrypted password.
         """
-        decrypted = cls._cipher.decrypt(
-            ciphertext.encode()
-        )
-        return decrypted.decode()
+        try:
+            decrypted = cls._cipher.decrypt(
+                ciphertext.encode()
+            )
+            return decrypted.decode()
+        except InvalidToken as exc:
+            raise EncryptionError(
+                "Unable to decrypt"
+            ) from exc
 
