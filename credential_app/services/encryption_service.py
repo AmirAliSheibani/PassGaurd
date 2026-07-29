@@ -31,4 +31,5 @@ class EncryptionService:
         decrypted = cls._cipher.decrypt(
             ciphertext.encode()
         )
-        return decrypted.decode() 
+        return decrypted.decode()
+
