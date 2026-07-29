@@ -86,7 +86,9 @@ class CredentialService:
     @classmethod
     @transaction.atomic
     def move_to_vault(cls, *, credential: Credential, vault: Vault) -> Credential:
-
+        """
+        move a credential to another vault
+        """
         exists = Credential.objects.filter(
             vault=vault,
             service_name=credential.service_name,
@@ -96,6 +98,17 @@ class CredentialService:
 
         credential.vault = vault
         credential.save(update_fields=["vault", "updated_at"])
+        return credential
+
+
+    @classmethod
+    @transaction.atomic
+    def delete(cls, credential: Credential) -> Credential:
+        credential_id = credential.pk
+        credential.delete()
+        return credential_id
+
+
 
 
 
