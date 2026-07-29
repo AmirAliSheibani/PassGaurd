@@ -1,5 +1,6 @@
 from django.db import transaction
 
+from vault_app.models import Vault
 from .encryption_service import EncryptionService
 from ..models import Credential, CredentialHistory
 
@@ -68,4 +69,34 @@ class CredentialService:
 
         return credential
 
-    
+
+    @classmethod
+    @transaction.atomic
+    def toggle_favorite(cls, *, credential: Credential) -> Credential:
+        """
+        update an existing credential favorite.
+        """
+        credential.is_favorite =(
+            not credential.is_favorite
+        )
+        credential.save(update_fields=["is_favorite", "updated_at"])
+        return credential
+
+
+    @classmethod
+    @transaction.atomic
+    def move_to_vault(cls, *, credential: Credential, vault: Vault) -> Credential:
+
+        exists = Credential.objects.filter(
+            vault=vault,
+            service_name=credential.service_name,
+        ).exclude(
+            pk=credential.pk
+        ).exists() # Each service name for credentials should be unique in each vaults
+
+        credential.vault = vault
+        credential.save(update_fields=["vault", "updated_at"])
+
+
+
+
