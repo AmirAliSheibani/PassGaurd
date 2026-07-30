@@ -50,3 +50,37 @@ class PasswordGenerator:
             )
 
         return "".join(shuffled_password)
+
+
+    @classmethod
+    def calculate_strength(cls, password: str) -> str:
+        """
+        Calculates the strength of a password.
+        """
+        score = 0
+
+        if any(char.islower() for char in password):
+            score += 1
+
+        if any(char.isupper() for char in password):
+            score += 1
+
+        if any(char.isdigit() for char in password):
+            score += 1
+
+        if any(char in cls.SYMBOLS for char in password):
+            score += 1
+
+        if len(password) >= 16:
+            score += 1
+
+        levels = {
+            0: "bad",
+            1: "weak",
+            2: "medium",
+            3: "good",
+            4: "strong",
+            5: "extreme",
+        }
+
+        return levels.get(score, "bad")
