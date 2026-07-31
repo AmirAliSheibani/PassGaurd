@@ -37,14 +37,14 @@ class PasswordGenerator:
 
         remaining = [
             secrets.choice(all_characters)
-            for _ in range(length - len(required)) # 8 - 4
+            for _ in range(length - len(required)) # 16 - 4
         ]
 
-        password_chars = required + remaining # 4 + 4
+        password_chars = required + remaining # 12 + 4
         shuffled_password = []
 
         while password_chars:
-            random_index = secrets.randbelow(len(password_chars))
+            random_index = secrets.randbelow(len(password_chars)) # Example: 16, random_index = 3
             shuffled_password.append(
                 password_chars.pop(random_index)
             )
