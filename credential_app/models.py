@@ -76,3 +76,4 @@ class CredentialHistory(models.Model):
             f"{self.credential.service_name} | "
             f"{self.created_at:%Y-%m-%d %H:%M}"
         )
+
