@@ -2,6 +2,9 @@ from django import forms
 from django.core.exceptions import ValidationError
 from vault_app.models import Vault, Category
 from .models import Credential, CredentialHistory
+from services.password_generator import PasswordGenerator
+
+default_password_length = PasswordGenerator.DEFAULT_LENGTH
 
 
 class CredentialBaseForm(forms.Form):
@@ -72,10 +75,10 @@ class CredentialBaseForm(forms.Form):
 
 
 class CredentialCreateForm(CredentialBaseForm):
-    password = forms.CharField(min_length=16, strip=False, widget=forms.PasswordInput(attrs={
+    password = forms.CharField(min_length=default_password_length, strip=False, widget=forms.PasswordInput(attrs={
         "class": "form-control", "placeholder": "Password", "autocomplete": "new-password"
     }))
-    confirm_password = forms.CharField(min_length=16, strip=False, widget=forms.PasswordInput(attrs={
+    confirm_password = forms.CharField(min_length=default_password_length, strip=False, widget=forms.PasswordInput(attrs={
         "class": "form-control", "placeholder": "Confirm Password", "autocomplete": "new-password"
     }))
 
@@ -108,11 +111,11 @@ class CredentialUpdateForm(CredentialBaseForm):
         return cleaned_data
 
 
-class CredentialRotatePasswordForm(CredentialBaseForm):
-    new_password = forms.CharField(min_length=16, strip=False, widget=forms.PasswordInput(attrs={
+class CredentialRotatePasswordForm(forms.Form):
+    new_password = forms.CharField(min_length=default_password_length, strip=False, widget=forms.PasswordInput(attrs={
         "class": "form-control", "placeholder": "New Password", "autocomplete": "new-password"
     }))
-    confirm_new_password = forms.CharField(min_length=16, strip=False, widget=forms.PasswordInput(attrs={
+    confirm_new_password = forms.CharField(min_length=default_password_length, strip=False, widget=forms.PasswordInput(attrs={
         "class": "form-control", "placeholder": "Confirm New Password", "autocomplete": "new-password"
     }))
 
@@ -131,7 +134,35 @@ class CredentialRotatePasswordForm(CredentialBaseForm):
         return cleaned_data
 
 
+class CredentialMoveToVaultForm(forms.Form):
+    target_vault = forms.ModelChoiceField(
+        queryset=Vault.objects.none(),
+        empty_label="Select vault",
+    )
+
+    def __init__(self, *args, user=None, credential=None, **kwargs):
+        self.user = user
+        self.credential = credential
+        super().__init__(*args, **kwargs)
 
 
+    def clean_target_vault(self):
+        target_vault = self.cleaned_data["target_vault"]
+
+        if self.credential is not None:
+            if target_vault == self.credential.vault:
+                raise ValidationError("This Credential is already in that Vault")
+
+            duplicate_exsist = Credential.objects.filter(
+                vault=self.credential.vault,
+                service_name__iexact=self.credential.service_name,
+            ).exclude(pk=self.credential.id).exists()
+
+            if duplicate_exsist:
+                raise ValidationError(
+                    "A Credential with this service name already exists in the target Vault."
+                )
+
+        return target_vault
 
 
