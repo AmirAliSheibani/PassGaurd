@@ -4,11 +4,6 @@ from django.core.exceptions import ValidationError
 
 
 class VaultForm(forms.Form):
-
-    def __init__(self, *args, user=None, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
-
     name = forms.CharField(max_length=100, strip=True, widget=forms.TextInput(
         attrs={"class": "form-control", "autofocus": True, "autocomplete": "off",
                "placeholder": "Vault name"}
@@ -19,6 +14,10 @@ class VaultForm(forms.Form):
     ),)
     is_default = forms.BooleanField(required=False, initial=False)
 
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
 
     def clean_name(self):
         name = " ".join(self.cleaned_data["name"].split())
@@ -37,10 +36,6 @@ class VaultForm(forms.Form):
 
 
 class CategoryForm(forms.Form):
-    def __init__(self, *args, user=None, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
-
     name = forms.CharField(max_length=100, strip=True, widget=forms.TextInput(
         attrs={"class": "form-control", "autofocus": True, "autocomplete": "off", "placeholder": "Category name"}
     ))
@@ -58,6 +53,10 @@ class CategoryForm(forms.Form):
     )
 
 
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
     def clean_name(self):
         name = " ".join(self.cleaned_data["name"].split())
         if not name:
@@ -71,4 +70,3 @@ class CategoryForm(forms.Form):
 
     def clean_color(self):
         return self.cleaned_data["color"].upper()
-    
