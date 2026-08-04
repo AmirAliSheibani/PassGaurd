@@ -1,6 +1,7 @@
 from django.db import transaction
 from ..models import Vault, Category
 from django.shortcuts import get_object_or_404
+from ..exceptions import DuplicateVaultExceptions
 
 
 class VaultService:
@@ -12,7 +13,7 @@ class VaultService:
         Create a new Vault instance
         """
         if Vault.objects.filter(user_id=user_id, name__iexact=data["name"]).exists():
-            raise Exception(f'Vault with name {data["name"]} already exists')
+            raise DuplicateVaultExceptions(f'Vault with name {data["name"]} already exists')
 
         vault = Vault.objects.create(**data)
         return vault
@@ -26,7 +27,7 @@ class VaultService:
         vault = get_object_or_404(Vault, user_id=user_id, pk=data["pk"])
 
         if Vault.objects.filter(user_id=user_id, name=data["name"]).exclude(pk=vault.pk).exists():
-            raise Exception(f'Vault with name {data["name"]} already exists')
+            raise DuplicateVaultExceptions(f'Vault with name {data["name"]} already exists')
 
         vault.name = data["name"]
         vault.description = data["description"]
@@ -41,7 +42,6 @@ class VaultService:
         vault_id = vault.pk
         vault.delete()
         return vault_id
-
 
 
 
