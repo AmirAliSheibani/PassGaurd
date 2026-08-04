@@ -4,3 +4,7 @@ class DuplicateVaultExceptions(Exception):
     """
     pass
 
+class DuplicateCategoryExceptions(Exception):
+    """
+    Raised when a duplicate category is detected.
+    """
