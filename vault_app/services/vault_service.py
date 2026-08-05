@@ -1,7 +1,7 @@
 from django.db import transaction
-from ..models import Vault, Category
+from vault_app.models import Vault, Category
 from django.shortcuts import get_object_or_404
-from ..exceptions import DuplicateVaultExceptions, DuplicateCategoryExceptions
+from vault_app.exceptions import DuplicateVaultExceptions, DuplicateCategoryExceptions
 
 
 class VaultService:

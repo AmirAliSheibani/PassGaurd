@@ -27,20 +27,31 @@ class CredentialSelector:
         return Credential.objects.filter(vault=vault, is_favorite=True)
 
     @classmethod
-    def search(cls, *, vault: Vault, query: str):
+    def search(cls, *, vault: Vault, user_id: int, query: str):
         return (
             Credential.objects
-            .filter(vault=vault)
+            .filter(
+                vault__user_id=user_id,
+            )
             .filter(
                 Q(service_name__icontains=query)
-                | Q(login_username__icontains=query)
-                | Q(login_email__icontains=query)
-                | Q(category__name__icontains=query)
+                |
+                Q(login_username__icontains=query)
+                |
+                Q(login_email__icontains=query)
+                |
+                Q(category__name__icontains=query)
+                |
+                Q(vault__name__icontains=query)
+            )
+            .select_related(
+                "vault",
+                "category",
             )
         )
 
     @classmethod
-    def exist(cls, *, vault:Vault, service_name:str) -> bool:
+    def exists_by_name(cls, *, vault:Vault, service_name:str) -> bool:
         return Credential.objects.filter(
             vault=vault,
             service_name=service_name,
