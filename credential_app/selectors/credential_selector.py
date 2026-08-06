@@ -14,6 +14,14 @@ class CredentialSelector:
         ).get(pk=credential_id)
 
     @classmethod
+    def get_by_id_for_user(cls, credential_id: int, user_id: int) -> Credential:
+        return Credential.objects.select_related(
+            "vault",
+            "vault__user",
+            "category",
+        ).get(pk=credential_id, vault__user_id=user_id)
+
+    @classmethod
     def get_by_vault(cls, *, vault: Vault):
         return (
             Credential.objects.filter(vault=vault)
