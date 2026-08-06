@@ -9,9 +9,7 @@ class CredentialObjectMixin:
     to the authenticated user.
     """
     def get_credential(self):
-        credential = CredentialSelector.get_by_id(credential_id=self.kwargs["pk"])
-
-        if credential.vault.user != self.request.user.id:
-            raise Http404
-
-        return credential
+        return CredentialSelector.get_by_id_for_user(
+            credential_id=self.kwargs["pk"],
+            user_id=self.request.user.id
+        )
