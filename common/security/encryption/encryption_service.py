@@ -1,6 +1,6 @@
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
-from .exceptions import EncryptionError
+from common.security.encryption.exceptions import EncryptionError
 
 # Use this generated key for your encryptions, add it on your .env
 # key = Fernet.generate_key().decode()

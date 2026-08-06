@@ -1,7 +1,7 @@
 from django.db import transaction
 
 from vault_app.models import Vault
-from common.security.encryption_service import EncryptionService
+from common.security.encryption.encryption_service import EncryptionService
 from credential_app.exceptions import DuplicateCredential
 from ..models import Credential, CredentialHistory
 
