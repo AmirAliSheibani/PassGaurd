@@ -1,8 +1,8 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from vault_app.models import Vault, Category
-from .models import Credential, CredentialHistory
-from services.password_generator import PasswordGenerator
+from .models import Credential
+from common.security.password_generator import PasswordGenerator
 
 default_password_length = PasswordGenerator.DEFAULT_LENGTH
 
