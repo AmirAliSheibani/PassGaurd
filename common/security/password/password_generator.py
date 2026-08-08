@@ -16,6 +16,9 @@ class PasswordGenerator:
 
     @classmethod
     def generate(cls, length: int = DEFAULT_LENGTH) -> str:
+        """
+        Generate a cryptographically secure password.
+        """
         if length < cls.DEFAULT_LENGTH:
             raise ValueError(
                 f"Password length must be at least {cls.DEFAULT_LENGTH} characters"
@@ -50,6 +53,17 @@ class PasswordGenerator:
             )
 
         return "".join(shuffled_password)
+
+
+    @classmethod
+    def generate_numeric(cls, length: int = DEFAULT_LENGTH) -> str:
+        """
+        Generate a cryptographically secure numeric code.
+        """
+        if length <+ 0:
+            raise ValueError("Password length must be greater than 0")
+
+        return "".join(secrets.choice(cls.NUMBERS) for _ in range(length))
 
 
     @classmethod
