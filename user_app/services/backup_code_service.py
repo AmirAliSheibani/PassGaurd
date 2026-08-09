@@ -56,7 +56,6 @@ class BackupCodeService:
 
         The plaintext codes are returned exactly once to the caller.
         """
-        cls._invalidate_existing_code(user=user)
         cls._remove_invalid_codes(user=user)
 
         plaintext_codes = [
@@ -121,20 +120,4 @@ class BackupCodeService:
         to perform this operation.
         """
         return cls.generate(user=user)
-
-
-    @classmethod
-    def has_active_codes(cls, *, user: User) -> bool:
-        """
-        Check whether the user still has at least one unused backup code.
-        """
-        return BackupCode.objects.filter(user=user, is_used=False).exists()
-
-
-    @classmethod
-    def remaining_count(cls, *, user: User) -> int:
-        """
-        Return the number of unused backup codes.
-        """
-        return BackupCode.objects.filter(user=user, is_used=False).count()
 

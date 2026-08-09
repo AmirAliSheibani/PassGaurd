@@ -7,6 +7,11 @@ User = get_user_model()
 class BackupCodeSelector:
 
     @classmethod
+    def get_codes_by_user(cls, user):
+        return BackupCode.objects.filter(user=user)
+
+
+    @classmethod
     def get_active_codes(cls, *, user: User):
         return BackupCode.objects.filter(
             user=user,
@@ -23,5 +28,6 @@ class BackupCodeSelector:
 
 
     @classmethod
-    def count_active_codes(cls, *, user: User) -> int:
+    def remaining_count(cls, *, user: User) -> int:
         return BackupCode.objects.filter(user=user, is_used=True).count()
+
