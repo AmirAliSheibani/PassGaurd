@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from common.security.password.password_generator import PasswordGenerator
+from user_app.selectors.backup_code_selector import BackupCodeSelector
 from user_app.models import BackupCode
 
 User = get_user_model()
@@ -27,7 +28,7 @@ class BackupCodeService:
 
         THIS METHOD IS INTERNAL.
         """
-        BackupCode.objects.filter(user=user).delete()
+        BackupCodeSelector.get_codes(user=user).delete()
 
 
     @classmethod
@@ -86,15 +87,7 @@ class BackupCodeService:
         if not normalized_code:
             return False
 
-        active_backup_codes = (
-            BackupCode.objects.filter(
-                user=user,
-                is_used=False
-            ).only(
-                "id",
-                "code_hash"
-            )
-        )
+        active_backup_codes = BackupCodeSelector.get_active_codes(user=user)
 
         for backup_code in active_backup_codes:
             if check_password(normalized_code, backup_code.code_hash):

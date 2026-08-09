@@ -7,7 +7,7 @@ User = get_user_model()
 class BackupCodeSelector:
 
     @classmethod
-    def get_codes_by_user(cls, user):
+    def get_codes(cls, user):
         return BackupCode.objects.filter(user=user)
 
 
