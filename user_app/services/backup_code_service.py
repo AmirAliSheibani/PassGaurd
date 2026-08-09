@@ -17,23 +17,17 @@ class BackupCodeService:
     Only password hashes are stored.
     """
 
-    BACKUP_CODE_COUNT = 8
+    BACKUP_CODE_COUNT = 10
     CODE_LENGTH = 12
 
     @classmethod
-    def _invalidate_existing_code(cls, *, user: User) -> None:
+    def _remove_invalid_codes(cls, *, user: User) -> None:
         """
-        Invalidates all the existing backup codes.
+        Removes invalid existing backup codes for a user.
 
         THIS METHOD IS INTERNAL.
         """
-        BackupCode.objects.filter(
-            user=user,
-            is_user=False
-        ).update(
-            is_user=True,
-            used_at=timezone.now()
-        )
+        BackupCode.objects.filter(user=user).delete()
 
 
     @classmethod
@@ -41,7 +35,12 @@ class BackupCodeService:
         """
         Normalize a backup code string.
         """
-        if not isinstance(code, str):
+        code = code.strip()
+
+        if not code.isdigit():
+            return ""
+
+        if len(code) != cls.CODE_LENGTH:
             return ""
 
         return code
@@ -58,9 +57,10 @@ class BackupCodeService:
         The plaintext codes are returned exactly once to the caller.
         """
         cls._invalidate_existing_code(user=user)
+        cls._remove_invalid_codes(user=user)
 
         plaintext_codes = [
-            PasswordGenerator.generate(length=cls.CODE_LENGTH)     # ['856974123587', '159735425178', ...]
+            PasswordGenerator.generate_numeric(length=cls.CODE_LENGTH)     # ['856974123587', '159735425178', ...]
             for _ in range(cls.BACKUP_CODE_COUNT)
         ]
 
@@ -90,7 +90,7 @@ class BackupCodeService:
         active_backup_codes = (
             BackupCode.objects.filter(
                 user=user,
-                is_user=False
+                is_used=False
             ).only(
                 "id",
                 "code_hash"
@@ -124,7 +124,6 @@ class BackupCodeService:
 
 
     @classmethod
-    @transaction.atomic
     def has_active_codes(cls, *, user: User) -> bool:
         """
         Check whether the user still has at least one unused backup code.
@@ -133,14 +132,9 @@ class BackupCodeService:
 
 
     @classmethod
-    @transaction.atomic
     def remaining_count(cls, *, user: User) -> int:
         """
         Return the number of unused backup codes.
         """
         return BackupCode.objects.filter(user=user, is_used=False).count()
-
-
-
-
 
