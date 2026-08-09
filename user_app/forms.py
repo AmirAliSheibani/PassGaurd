@@ -49,4 +49,55 @@ class RegisterForm(forms.Form):
         return cleaned_data
 
 
+class BackupCodeVerificationForm(forms.Form):
+    """
+    validates a single backup code during account recovery.
+    """
+    code = forms.CharField(min_length=12, max_length=12, strip=True, widget=forms.TextInput(attrs={
+        'class': 'form-control', "inputmode": "numeric", "placeholder": "12-digit backup code", "autocomplete": "one-time-code"
+    }))
+
+    def clean_code(self):
+        code = self.cleaned_data["code"].strip()
+
+        if not code.isdigit():
+            raise ValidationError("backup code must contain only digits")
+
+        if len(code) != 12:
+            raise ValidationError("backup code must contain 12 digits")
+
+        return code
+
+
+class BackupCodeConfirmationForm(forms.Form):
+    """
+    Confirm that the user has successfully stored the backup code.
+    """
+    confirmed = forms.BooleanField(
+        required=True,
+        label="I have securely saved my backup codes.",
+        widget=forms.CheckboxInput(attrs={
+           'class': 'form-control', "checked": "checked", "autocomplete": "off"
+        }),
+        error_messages={
+            'required': "You must confirm that you have saved your backup codes."
+        },
+    )
+
+
+class RegenerateBackupCodesForm(forms.Form):
+    """
+    confirms the user's backup codes intentions before generating new backup codes.
+    """
+
+    confirmation = forms.BooleanField(
+        required=True,
+        label="I understand that my existing backup codes will become invalid.",
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-control', "checked": "checked", "autocomplete": "off"
+        }),
+        error_messages={
+            "required": "You must confirm that you want to regenerate your backup codes."
+        },
+    )
 
