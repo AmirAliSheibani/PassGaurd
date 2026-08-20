@@ -49,7 +49,7 @@ class RegisterForm(forms.Form):
         return cleaned_data
 
 
-class ResetMasterPassword(forms.Form):
+class ResetPasswordForm(forms.Form):
     password = forms.CharField(min_length=12, strip=False, widget=forms.PasswordInput(attrs={
         'class': 'form-control', "placeholder": "Master password", "autocomplete": "new-password"
     }))

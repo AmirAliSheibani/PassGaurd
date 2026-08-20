@@ -4,7 +4,8 @@ from django.urls import is_valid_path
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, BackupCodeVerificationForm
+from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, BackupCodeVerificationForm, \
+    ResetPasswordForm
 from user_app.models import BackupCode
 from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
@@ -118,16 +119,16 @@ class BackupCodeRecoveryView(View):
     """
     template_name = 'user_app/backup_code_recovery.html'
     def get(self, request):
-        if not request.user.is_authenticated:
-            return redirect("user_app:login")
+        if request.user.is_authenticated:
+            return redirect("core:home")
 
         form = BackupCodeVerificationForm()
 
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        if not request.user.is_authenticated:
-            return redirect("user_app:login")
+        if request.user.is_authenticated:
+            return redirect("core:home")
 
         form = BackupCodeVerificationForm(request.POST)
 
@@ -157,6 +158,45 @@ class BackupCodeRecoveryView(View):
         return redirect("user_app:reset-master-password")
 
 
+class ResetMasterPasswordView(View):
+    """
+    Allows a user who successfully completed recovery
+    to set a new master password.
+    """
+    template_name = 'user_app/reset_master_password.html'
 
+    def get(self, request):
+        user_id = request.session.get("recovery_user_id")
 
+        if not user_id:
+            return redirect("user_app:recover")
+
+        form = ResetMasterPasswordView()
+
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        user_id = request.session.get("recovery_user_id")
+
+        if not user_id:
+            return redirect("user_app:recover")
+
+        form = ResetPasswordForm(request.POST)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
+        user = UserSelector.get_by_id(user_id=user_id)
+
+        if user is None:
+            request.session.pop("recovery_user_id", None)
+            return redirect("user_app:recover")
+
+        UserService.change_password(user=user, password=form.cleaned_data['password'])
+
+        request.session.pop("recovery_user_id", None)
+
+        login(request, user)
+
+        return redirect("user_app:backup_code_setup")
 
