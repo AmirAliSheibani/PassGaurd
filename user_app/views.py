@@ -5,7 +5,7 @@ from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, BackupCodeVerificationForm, \
-    ResetPasswordForm
+    ResetPasswordForm, RegenerateBackupCodesForm
 from user_app.models import BackupCode
 from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
@@ -89,8 +89,11 @@ class BackupCodeSetupView(View):
         if not request.user.is_authenticated:
             return redirect("user_app:login")
 
-        codes = BackupCodeService.generate(user=request.user)
-        request.session['backup_codes'] = codes
+        if not request.session.get('backup_codes'):
+            codes = BackupCodeService.generate(user=request.user)
+            request.session['backup_codes'] = codes
+        else:
+            codes = request.session['backup_codes']
 
         return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm})
 
@@ -200,3 +203,50 @@ class ResetMasterPasswordView(View):
 
         return redirect("user_app:backup_code_setup")
 
+
+class RegenerateBackupCodesView(View):
+    """
+    Regenerates the authenticated user's backup codes.
+
+    Rate limiting and authorization belong to the service/security
+    layer and must not rely only on UI restrictions.
+    """
+
+    template_name = "user_app/regenerate_backup_codes.html"
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        form = RegenerateBackupCodesForm()
+
+        return render(
+            request,
+            self.template_name,
+            {"form": form},
+        )
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        form = RegenerateBackupCodesForm(
+            request.POST
+        )
+
+        if not form.is_valid():
+            return render(
+                request,
+                self.template_name,
+                {"form": form},
+            )
+
+        codes = BackupCodeService.regenerate(
+            user=request.user,
+        )
+
+        request.session["backup_codes"] = codes
+
+        return redirect(
+            "user_app:backup_code_setup"
+        )
