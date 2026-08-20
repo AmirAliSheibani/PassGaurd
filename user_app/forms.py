@@ -57,6 +57,10 @@ class BackupCodeVerificationForm(forms.Form):
         'class': 'form-control', "inputmode": "numeric", "placeholder": "12-digit backup code", "autocomplete": "one-time-code"
     }))
 
+    username = forms.CharField(max_length=150, min_length=3, strip=True, widget=forms.TextInput(attrs={
+        'class': 'form-control', "placeholder": "Username", "autofocus": True, "autocomplete": "username"
+    }))
+
     def clean_code(self):
         code = self.cleaned_data["code"].strip()
 

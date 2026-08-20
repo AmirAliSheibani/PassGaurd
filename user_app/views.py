@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model, authenticate, login, logout
+from django.urls import is_valid_path
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
 
-from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm
+from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, BackupCodeVerificationForm
 from user_app.models import BackupCode
+from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
 from user_app.services.user_services import UserService
 
@@ -108,6 +110,51 @@ class BackupCodeSetupView(View):
         request.session.pop('backup_codes', None)
 
         return redirect("core:home")
+
+
+class BackupCodeRecoveryView(View):
+    """
+    Verifies a backup code and establish a temporary recovery session.
+    """
+    template_name = 'user_app/backup_code_recovery.html'
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        form = BackupCodeVerificationForm()
+
+        return render(request, self.template_name, {'form': form})
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        form = BackupCodeVerificationForm(request.POST)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
+        username = request.POST.get("username", "").strip()
+
+        if not username:
+            form.add_error(None, "Username is required.")
+            return render(request, self.template_name, {'form': form})
+
+        user = UserSelector.get_by_username(username=username)
+
+        if user is None:
+            form.add_error(None, "Invalid recovery credentials.")
+            return render(request, self.template_name, {'form': form})
+
+        is_valid = BackupCodeService.verify(user=user, code=form.cleaned_data['code'])
+
+        if not is_valid:
+            form.add_error(None, "Invalid recovery credentials.")
+            return render(request, self.template_name, {'form': form})
+
+        request.session["recovery_user_id"] = user.pk
+
+        return redirect("user_app:reset-master-password")
 
 
 
