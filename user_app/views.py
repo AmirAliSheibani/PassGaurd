@@ -157,5 +157,9 @@ class BackupCodeRecoveryView(View):
         return redirect("user_app:reset-master-password")
 
 
+class ResetMasterPasswordView(View):
+    template_name = 'user_app/reset_master_password.html'
+
+
 
 

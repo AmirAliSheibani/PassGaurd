@@ -49,6 +49,25 @@ class RegisterForm(forms.Form):
         return cleaned_data
 
 
+class ResetMasterPassword(forms.Form):
+    password = forms.CharField(min_length=12, strip=False, widget=forms.PasswordInput(attrs={
+        'class': 'form-control', "placeholder": "Master password", "autocomplete": "new-password"
+    }))
+    confirm_password = forms.CharField(min_length=12, strip=False, widget=forms.PasswordInput(attrs={
+        'class': 'form-control', "placeholder": "Confirm master password", "autocomplete": "new-password"
+    }))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        confirm_password = cleaned_data.get("confirm_password")
+
+        if password and confirm_password and password != confirm_password:
+            self.add_error(confirm_password, "Passwords don't match")
+
+        return cleaned_data
+
+
 class BackupCodeVerificationForm(forms.Form):
     """
     validates a single backup code during account recovery.
