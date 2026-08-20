@@ -1,49 +1,114 @@
-from django.contrib.auth.models import User
-from django.shortcuts import render, redirect, reverse
-from django.contrib.auth import authenticate, login, logout
+from django.shortcuts import render, redirect
+from django.contrib.auth import get_user_model, authenticate, login, logout
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+
+from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm
+from user_app.models import BackupCode
+from user_app.services.backup_code_service import BackupCodeService
+from user_app.services.user_services import UserService
 
 
 # Create your views here.
 
 
 class LoginView(View):
-    template_name = 'login.html' # not exist yet
+
+    template_name = 'user_app/login.html'
+
     def get(self, request):
-        return render(request, self.template_name)
+        if request.user.is_authenticated:
+            return redirect("core:home")
+
+        form = LoginForm()
+        return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get("password")
+        form = LoginForm(request.POST)
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
 
         user = authenticate(
-            request=request,
-            username = username,
-            password = password
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password']
         )
-        if user is not None:
-            login(request, user)
-            return redirect('/')
-        return render(request, self.template_name,{"error": "Invalid username or password."})
 
+        if user is None:
+            form.add_error(None, "Invalid username or password")
+
+            return render(request, self.template_name, {'form': form})
+
+        login(request, user)
+        return render(request, self.template_name, {'form': form})
 
 
 class LogoutView(View):
     def get(self, request):
         logout(request)
-        return redirect(reverse('user_app:login'))
+        return redirect("core:home")
+
+    def post(self, request):
+        logout(request)
+
+        return redirect("core:home")
 
 
 class RegisterView(View):
-    template_name = 'register.html' # not exist yet
+    template_name = 'user_app/register.html'
+
     def get(self, request):
-        return render(request, self.template_name)
+        if request.user.is_authenticated:
+            return redirect("core:home")
+
+        form = RegisterForm()
+        return render(request, self.template_name, {'form': form})
 
     def post(self, request):
-        username = request.POST.get('username')
-        password = request.POST.get("password")
+        form = RegisterForm(request.POST)
 
-        user = User.objects.create_user(username=username, password=password)
-        return redirect(reverse('user_app:login'))
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
+        user = UserService.register(
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password']
+        )
+        login(request, user)
+        return redirect("core:home")
+
+
+class BackupCodeSetupView(View):
+    """
+    Generate the initial recovery codes after registration.
+    """
+    template_name = 'user_app/backup_code_setup.html'
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        codes = BackupCodeService.generate(user=request.user)
+        request.session['backup_codes'] = codes
+
+        return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm})
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return redirect("user_app:login")
+
+        form = BackupCodeConfirmationForm(request.POST)
+
+        if not form.is_valid():
+            codes = request.session.get('backup_codes')
+
+            if not codes:
+                return redirect("user_app:backup_code_setup")
+
+            return render(request, self.template_name, {'codes': codes, 'form': form})
+
+        request.session.pop('backup_codes', None)
+
+        return redirect("core:home")
+
+
 
 
