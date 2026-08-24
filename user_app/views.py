@@ -138,6 +138,8 @@ class BackupCodeRecoveryView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
 
+        username = form.cleaned_data["username"]
+
         user = UserSelector.get_by_username(username=username)
 
         if user is None:
