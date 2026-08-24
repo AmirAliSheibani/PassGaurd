@@ -42,7 +42,7 @@ class LoginView(View):
             return render(request, self.template_name, {'form': form})
 
         login(request, user)
-        return render(request, self.template_name, {'form': form})
+        return redirect("core:home")
 
 
 class LogoutView(View):
@@ -174,7 +174,7 @@ class ResetMasterPasswordView(View):
         if not user_id:
             return redirect("user_app:recover")
 
-        form = ResetMasterPasswordView()
+        form = ResetPasswordForm()
 
         return render(request, self.template_name, {'form': form})
 
