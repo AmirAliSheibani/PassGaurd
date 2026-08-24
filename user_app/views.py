@@ -138,12 +138,6 @@ class BackupCodeRecoveryView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
 
-        username = request.POST.get("username", "").strip()
-
-        if not username:
-            form.add_error(None, "Username is required.")
-            return render(request, self.template_name, {'form': form})
-
         user = UserSelector.get_by_username(username=username)
 
         if user is None:

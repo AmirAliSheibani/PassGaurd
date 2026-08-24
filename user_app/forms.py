@@ -80,6 +80,14 @@ class BackupCodeVerificationForm(forms.Form):
         'class': 'form-control', "placeholder": "Username", "autofocus": True, "autocomplete": "username"
     }))
 
+    def clean_username(self):
+        username = self.cleaned_data['username'].strip()
+
+        if not username:
+            self.add_error(None, "Username is required.")
+
+        return username
+
     def clean_code(self):
         code = self.cleaned_data["code"].strip()
 
