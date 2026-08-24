@@ -77,7 +77,7 @@ class RegisterView(View):
             password=form.cleaned_data['password']
         )
         login(request, user)
-        return redirect("core:home")
+        return redirect("user_app:backup_code_setup")
 
 
 class BackupCodeSetupView(View):

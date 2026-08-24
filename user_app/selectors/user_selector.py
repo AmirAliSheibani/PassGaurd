@@ -5,15 +5,15 @@ User = get_user_model()
 class UserSelector:
 
     @classmethod
-    def get_by_id(cls, *, user_id: int) -> User:
+    def get_by_id(cls, *, user_id: int) -> User | None:
         return User.objects.get(pk=user_id)
 
     @classmethod
-    def get_by_username(cls, *, username: str) -> User:
+    def get_by_username(cls, *, username: str) -> User | None:
         return User.objects.get(username__iexact=username)
 
     @classmethod
-    def get_by_id_if_active(cls, *, user_id: int) -> User:
+    def get_by_id_if_active(cls, *, user_id: int) -> User | None:
         return User.objects.get(pk=user_id, is_active=True)
 
     @classmethod
