@@ -139,3 +139,15 @@ FERNET_KEY = env("FERNET_KEY")
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+
+CACHES = {
+    "default": {
+        # Your normal cache configuration
+    },
+
+    "ratelimit": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_URL"),
+    },
+}
