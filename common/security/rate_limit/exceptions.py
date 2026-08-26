@@ -1,8 +1,14 @@
 class RateLimitExceeded(Exception):
     """
-    Raised when an action exceeds its configured rate limit.
+    Raised when a security-sensitive action exceeds its rate limit.
     """
 
-    def __init__(self, message: str, *, retry_after: int | None = None):
-        super().__init__(message)
-        self.retry_after = retry_after
+    pass
+
+
+class CooldownActive(Exception):
+    """
+    Raised when an action is still inside its cooldown period.
+    """
+
+    pass
