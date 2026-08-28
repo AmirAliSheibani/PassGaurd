@@ -17,6 +17,7 @@ class CooldownService:
 
         return f'{cls.KEY_PREFIX}:{action}:{identifier_hash}'
 
+
     @classmethod
     def enforce(cls, *, action: str, identifier: str, durition: int) -> None:
         """
@@ -31,6 +32,7 @@ class CooldownService:
 
         if not created:
             raise CooldownActive(f"Action '{action}' is currently on cooldown.")
+
 
     @classmethod
     def clear(cls, *, action: str, identifier: str) -> None:
