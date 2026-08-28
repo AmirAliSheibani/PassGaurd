@@ -19,16 +19,16 @@ class CooldownService:
 
 
     @classmethod
-    def enforce(cls, *, action: str, identifier: str, durition: int) -> None:
+    def enforce(cls, *, action: str, identifier: str, duration: int) -> None:
         """
         start a cooldown if none currently exists.
         """
-        if durition < 1:
+        if duration < 1:
             raise ValueError("Cooldown duration must be greater than zero.")
 
         key = cls._build_key(action=action, identifier=identifier)
 
-        created = cls.cache.add(key, True, timeout=durition)
+        created = cls.cache.add(key, True, timeout=duration)
 
         if not created:
             raise CooldownActive(f"Action '{action}' is currently on cooldown.")

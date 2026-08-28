@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from common.security.password.password_generator import PasswordGenerator
 from user_app.selectors.backup_code_selector import BackupCodeSelector
 from user_app.models import BackupCode
-
 User = get_user_model()
 
 class BackupCodeService:

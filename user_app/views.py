@@ -1,19 +1,17 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import get_user_model, authenticate, login, logout
-from django.urls import is_valid_path
+from django.contrib.auth import authenticate, login, logout
 from django.views import View
-from django.contrib.auth.mixins import LoginRequiredMixin
 
 from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, BackupCodeVerificationForm, \
     ResetPasswordForm, RegenerateBackupCodesForm
-from user_app.models import BackupCode
+
 from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
 from user_app.services.user_services import UserService
 
 from common.security.rate_limit.exceptions import RateLimitExceeded
 from common.security.rate_limit.limiter import RateLimiter
-from common.security.rate_limit.policies import LoginRateLimitPolicy
+from common.security.rate_limit.policies import LoginRateLimitPolicy, RecoveryRateLimitPolicy
 
 
 # Create your views here.
@@ -167,6 +165,36 @@ class BackupCodeRecoveryView(View):
 
         username = form.cleaned_data["username"]
 
+        try:
+            RateLimiter.check(
+                action="recovery:ip",
+                identifier=request.META.get(
+                    "REMOTE_ADDR",
+                    "unknown",
+                ),
+                limit=RecoveryRateLimitPolicy.IP_LIMIT,
+                window=RecoveryRateLimitPolicy.IP_WINDOW,
+            )
+
+            RateLimiter.check(
+                action="recovery:username",
+                identifier=username.lower(),
+                limit=RecoveryRateLimitPolicy.USERNAME_LIMIT,
+                window=RecoveryRateLimitPolicy.USERNAME_WINDOW,
+            )
+
+        except RateLimitExceeded:
+            form.add_error(
+                None,
+                "Too many recovery attempts. Please try again later.",
+            )
+
+            return render(
+                request,
+                self.template_name,
+                {"form": form},
+            )
+
         user = UserSelector.get_by_username(username=username)
 
         if user is None:
@@ -263,6 +291,7 @@ class RegenerateBackupCodesView(View):
                 self.template_name,
                 {"form": form},
             )
+
 
         codes = BackupCodeService.regenerate(
             user=request.user,
