@@ -11,6 +11,10 @@ from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
 from user_app.services.user_services import UserService
 
+from common.security.rate_limit.exceptions import RateLimitExceeded
+from common.security.rate_limit.limiter import RateLimiter
+from common.security.rate_limit.policies import LoginRateLimitPolicy
+
 
 # Create your views here.
 
@@ -31,7 +35,30 @@ class LoginView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
 
+        username = form.cleaned_data['username']
+
+        try:
+            RateLimiter.check(
+                action="login:ip",
+                identifier=request.META.get("REMOTE_ADDR", "unknown"),
+                limit=LoginRateLimitPolicy.IP_LIMIT,
+                window=LoginRateLimitPolicy.IP_WINDOW,
+            )
+
+            RateLimiter.check(
+                action="login:username",
+                identifier=username.lower(),
+                limit=LoginRateLimitPolicy.USERNAME_LIMIT,
+                window=LoginRateLimitPolicy.USERNAME_WINDOW,
+            )
+
+        except RateLimitExceeded:
+            form.add_error(None, "Too many attempts. Please try again later.")
+
+            return render(request, self.template_name, {'form': form})
+
         user = authenticate(
+            request=request,
             username=form.cleaned_data['username'],
             password=form.cleaned_data['password']
         )
