@@ -19,7 +19,6 @@ class BackupCodeSelector:
         )
 
 
-
     @classmethod
     def has_active_codes(cls, *, user: User) -> bool:
         return BackupCode.objects.filter(user=user, is_used=False).exists()
