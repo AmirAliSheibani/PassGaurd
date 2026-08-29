@@ -35,26 +35,6 @@ class LoginView(View):
 
         username = form.cleaned_data['username']
 
-        try:
-            RateLimiter.check(
-                action="login:ip",
-                identifier=request.META.get("REMOTE_ADDR", "unknown"),
-                limit=LoginRateLimitPolicy.IP_LIMIT,
-                window=LoginRateLimitPolicy.IP_WINDOW,
-            )
-
-            RateLimiter.check(
-                action="login:username",
-                identifier=username.lower(),
-                limit=LoginRateLimitPolicy.USERNAME_LIMIT,
-                window=LoginRateLimitPolicy.USERNAME_WINDOW,
-            )
-
-        except RateLimitExceeded:
-            form.add_error(None, "Too many attempts. Please try again later.")
-
-            return render(request, self.template_name, {'form': form})
-
         user = authenticate(
             request=request,
             username=form.cleaned_data['username'],
@@ -62,8 +42,27 @@ class LoginView(View):
         )
 
         if user is None:
-            form.add_error(None, "Invalid username or password")
+            try:
+                RateLimiter.check(
+                    action="login:ip",
+                    identifier=request.META.get("REMOTE_ADDR", "unknown"),
+                    limit=LoginRateLimitPolicy.IP_LIMIT,
+                    window=LoginRateLimitPolicy.IP_WINDOW,
+                )
 
+                RateLimiter.check(
+                    action="login:username",
+                    identifier=username.lower(),
+                    limit=LoginRateLimitPolicy.USERNAME_LIMIT,
+                    window=LoginRateLimitPolicy.USERNAME_WINDOW,
+                )
+
+            except RateLimitExceeded:
+                form.add_error(None, "Too many attempts. Please try again later.")
+
+                return render(request, self.template_name, {'form': form})
+
+            form.add_error(None, "Invalid username or password")
             return render(request, self.template_name, {'form': form})
 
         login(request, user)
