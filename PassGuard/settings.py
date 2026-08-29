@@ -143,11 +143,14 @@ STATIC_URL = '/static/'
 
 CACHES = {
     "default": {
-        # Your normal cache configuration
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": env("REDIS_CACHE_URL"),
+        "KEY_PREFIX": "passguard:cache",
     },
 
     "ratelimit": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": env("REDIS_URL"),
+        "LOCATION": env("REDIS_SECURITY_URL"),
+        "KEY_PREFIX": "passguard:security",
     },
 }
