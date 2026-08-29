@@ -13,13 +13,11 @@ class BackupCodeSelector:
 
     @classmethod
     def get_active_codes(cls, *, user: User):
-        return BackupCode.objects.filter(
-            user=user,
-            is_used=False
-        ).only(
-            'id',
-            'code_hash',
+        return BackupCode.objects.select_for_update().filter(user=user, is_used=False,).only(
+        "id",
+        "code_hash"
         )
+
 
 
     @classmethod
