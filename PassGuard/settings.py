@@ -148,7 +148,7 @@ CACHES = {
         "KEY_PREFIX": "passguard:cache",
     },
 
-    "ratelimit": {
+    "security": {
         "BACKEND": "django.core.cache.backends.redis.RedisCache",
         "LOCATION": env("REDIS_SECURITY_URL"),
         "KEY_PREFIX": "passguard:security",

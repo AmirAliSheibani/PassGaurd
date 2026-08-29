@@ -13,17 +13,11 @@ class RateLimiter:
     by the configured backend.
     """
 
-    cache = caches["ratelimit"]
+    cache = caches["security"]
 
-    KEY_PREFIX = "passguard:rate-limit"
 
     @classmethod
-    def _build_key(
-        cls,
-        *,
-        action: str,
-        identifier: str,
-    ) -> str:
+    def _build_key(cls, *, action: str, identifier: str) -> str:
         """
         Build a privacy-safe cache key.
 
@@ -35,27 +29,48 @@ class RateLimiter:
             identifier.encode("utf-8")
         ).hexdigest()
 
-        return (
-            f"{cls.KEY_PREFIX}:"
-            f"{action}:"
-            f"{identifier_hash}"
-        )
+        return f"rate-limit:{action}:{identifier_hash}"
 
     @classmethod
-    def check(
-        cls,
-        *,
-        action: str,
-        identifier: str,
-        limit: int,
-        window: int,
-    ) -> None:
+    def _increment(cls, *, action: str, identifier: str, window: int) -> int:
+        """
+        Automatically increment the counter for the current window.
+        """
+        key = cls._build_key(action=action, identifier=identifier)
+        created = cls.cache.add(key, 1, timeout=window)
+        if created:
+            return 1
+        try:
+            return cls.cache.incr(key)
+        except ValueError:
+            created = cls.cache.add(key, 1, timeout=window)
+            if created:
+                return 1
+
+            return cls.cache.incr(key)
+
+
+    @classmethod
+    def consume(cls, *, action: str, identifier: str, limit:int, window: int) -> int:
+        """
+        Consume one request from the rate-limit window.
+        """
+        if limit < 1:
+            raise ValueError("Rate limit must be greater than zero.")
+
+        if window < 1:
+            raise ValueError("Rate-limit window must be greater than zero.")
+
+        count = cls._increment(action=action, identifier=identifier, window=window)
+        if count > limit:
+            raise RateLimitExceeded(f"Rate limit exceeded for action '{action}'.")
+
+
+
+    @classmethod
+    def check(cls, *, action: str, identifier: str, limit: int, window: int) -> None:
         """
         Consume one attempt from the current fixed window.
-
-        Raises:
-            RateLimitExceeded:
-                If the configured limit has been reached.
         """
 
         if limit < 1:
@@ -68,44 +83,24 @@ class RateLimiter:
             action=action,
             identifier=identifier,
         )
+        count = cls.cache.get(key, 0)
+        if count >= limit:
+            raise RateLimitExceeded(f"Rate limit exceeded for action '{action}'.")
 
-        created = cls.cache.add(
-            key,
-            1,
-            timeout=window,
-        )
-
-        if created:
-            return
-
-        try:
-            current_count = cls.cache.incr(key)
-        except ValueError:
-            # The key may have expired between add() and incr().
-            # Start a fresh window.
-            created = cls.cache.add(
-                key,
-                1,
-                timeout=window,
-            )
-
-            if created:
-                return
-
-            current_count = cls.cache.incr(key)
-
-        if current_count > limit:
-            raise RateLimitExceeded(
-                f"Rate limit exceeded for action '{action}'."
-            )
 
     @classmethod
-    def reset(
-        cls,
-        *,
-        action: str,
-        identifier: str,
-    ) -> None:
+    def record_failure(cls, *, action: str, identifier: str, limit: int, window: int) -> int:
+        """
+        Record one failed attempt.
+        """
+        if window < 1:
+            raise ValueError("Rate-limit window must be greater than zero.")
+
+        return cls._increment(action=action, identifier=identifier, window=window)
+
+
+    @classmethod
+    def reset(cls, *, action: str, identifier: str, ) -> None:
         """
         Reset an action's current rate-limit window.
         """
