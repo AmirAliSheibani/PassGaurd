@@ -89,7 +89,7 @@ class RateLimiter:
 
 
     @classmethod
-    def record_failure(cls, *, action: str, identifier: str, limit: int, window: int) -> int:
+    def record_failure(cls, *, action: str, identifier: str, window: int) -> int:
         """
         Record one failed attempt.
         """

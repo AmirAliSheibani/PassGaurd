@@ -171,9 +171,10 @@ class BackupCodeRecoveryView(View):
             return render(request, self.template_name, {'form': form})
 
         username = form.cleaned_data["username"]
+        code = form.cleaned_data["code"]
 
         try:
-            RateLimiter.check(
+            RateLimiter.consume(
                 action="recovery:ip",
                 identifier=request.META.get(
                     "REMOTE_ADDR",
@@ -186,8 +187,7 @@ class BackupCodeRecoveryView(View):
             RateLimiter.check(
                 action="recovery:username",
                 identifier=username.lower(),
-                limit=RecoveryRateLimitPolicy.USERNAME_FAILURE_LIMIT,
-                window=RecoveryRateLimitPolicy.USERNAME_FAILURE_WINDOW,
+                limit=RecoveryRateLimitPolicy.USERNAME_FAILURE_LIMIT
             )
 
         except RateLimitExceeded:
@@ -204,17 +204,39 @@ class BackupCodeRecoveryView(View):
 
         user = UserSelector.get_by_username(username=username)
 
+        # Deliberately do not reveal whether the username exists.
         if user is None:
+            RateLimiter.record_failure(
+                action="recovery:username",
+                identifier=username.lower(),
+                window=RecoveryRateLimitPolicy.USERNAME_FAILURE_WINDOW,
+            )
             form.add_error(None, "Invalid recovery credentials.")
             return render(request, self.template_name, {'form': form})
 
-        is_valid = BackupCodeService.verify(user=user, code=form.cleaned_data['code'])
+
+        is_valid = BackupCodeService.verify(user=user, code=code)
 
         if not is_valid:
+            RateLimiter.record_failure(
+                action="recovery:username",
+                identifier=username.lower(),
+                window=RecoveryRateLimitPolicy.USERNAME_FAILURE_WINDOW,
+            )
+
             form.add_error(None, "Invalid recovery credentials.")
             return render(request, self.template_name, {'form': form})
 
+        RateLimiter.reset(
+            action="recovery:username",
+            identifier=username.lower(),
+        )
+
+        # Prevent reuse of the previous anonymous session.
+        request.session.cycle_key()
         request.session["recovery_user_id"] = user.pk
+        # Recovery authorization should be short-lived.
+        request.session.set_expiry(600)     
 
         return redirect("user_app:reset-master-password")
 
