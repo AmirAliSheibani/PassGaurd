@@ -68,16 +68,14 @@ class RateLimiter:
 
 
     @classmethod
-    def check(cls, *, action: str, identifier: str, limit: int, window: int) -> None:
+    def check(cls, *, action: str, identifier: str, limit: int) -> None:
         """
-        Consume one attempt from the current fixed window.
+        Check whether the current counter is already at the limit.
+
+        This method does not consume an attempt.
+        It is useful for counters that should only record failures.
         """
 
-        if limit < 1:
-            raise ValueError("Rate limit must be greater than zero.")
-
-        if window < 1:
-            raise ValueError("Rate-limit window must be greater than zero.")
 
         key = cls._build_key(
             action=action,

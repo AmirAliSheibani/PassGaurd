@@ -272,14 +272,17 @@ class ResetMasterPasswordView(View):
         user = UserSelector.get_by_id(user_id=user_id)
 
         if user is None:
-            request.session.pop("recovery_user_id", None)
+            request.session.flush()
             return redirect("user_app:recover")
 
         UserService.change_password(user=user, password=form.cleaned_data['password'])
 
         request.session.pop("recovery_user_id", None)
 
+        # Restore normal session lifetime before login.
+        request.session.set_expiry(None)
         login(request, user)
+
 
         return redirect("user_app:backup_code_setup")
 
