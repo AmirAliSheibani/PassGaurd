@@ -25,7 +25,7 @@ class CooldownService:
 
         acquired = cls.cache.add(key, True, timeout=duration)
         if not acquired:
-            raise CooldownActive(f"Action '{action}' is currently on cooldown.")\
+            raise CooldownActive(f"Action '{action}' is currently on cooldown.")
 
 
     @classmethod

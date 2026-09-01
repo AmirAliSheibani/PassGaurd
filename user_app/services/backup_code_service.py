@@ -4,6 +4,8 @@ from django.utils import timezone
 from django.contrib.auth import get_user_model
 
 from common.security.password.password_generator import PasswordGenerator
+from common.security.rate_limit.cooldown import CooldownService
+from common.security.rate_limit.policies import BackupCodeRegenerationPolicy
 from user_app.selectors.backup_code_selector import BackupCodeSelector
 from user_app.models import BackupCode
 User = get_user_model()
@@ -111,5 +113,20 @@ class BackupCodeService:
         The caller must already be authenticated and authorized
         to perform this operation.
         """
-        return cls.generate(user=user)
+        identifier = str(user.pk)
+        CooldownService.acquire(
+            action="backup-code-regeneration",
+            identifier=identifier,
+            duration=BackupCodeRegenerationPolicy.COOLDOWN_SECONDS
+        )
+
+        try:
+            return cls.generate(user=user)
+        except Exception:
+            CooldownService.clear(action="backup-code-regeneration", identifier=identifier)
+            raise
+
+
+
+
 
