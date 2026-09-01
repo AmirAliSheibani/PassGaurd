@@ -34,38 +34,46 @@ class LoginView(View):
             return render(request, self.template_name, {'form': form})
 
         username = form.cleaned_data['username']
+        password = form.cleaned_data['password']
+
+        try:
+            # Limit all login requests from the same IP.
+            RateLimiter.consume(
+                action="login:ip",
+                identifier=request.META.get("REMOTE_ADDR", "unknown"),
+                limit=LoginRateLimitPolicy.IP_LIMIT,
+                window=LoginRateLimitPolicy.IP_WINDOW,
+            )
+            # Only failed authentication attempts are counted for the username.
+            RateLimiter.check(
+                action="login:username",
+                identifier=username.lower(),
+                limit=LoginRateLimitPolicy.USERNAME_FAILURE_LIMIT,
+            )
+        except RateLimitExceeded:
+            form.add_error(None, "Too many attempts. Please try again later.")
+            return render(request, self.template_name, {'form': form})
 
         user = authenticate(
             request=request,
-            username=form.cleaned_data['username'],
-            password=form.cleaned_data['password']
+            username=username,
+            password=password
         )
 
         if user is None:
-            try:
-                RateLimiter.check(
-                    action="login:ip",
-                    identifier=request.META.get("REMOTE_ADDR", "unknown"),
-                    limit=LoginRateLimitPolicy.IP_LIMIT,
-                    window=LoginRateLimitPolicy.IP_WINDOW,
-                )
-
-                RateLimiter.check(
-                    action="login:username",
-                    identifier=username.lower(),
-                    limit=LoginRateLimitPolicy.USERNAME_LIMIT,
-                    window=LoginRateLimitPolicy.USERNAME_WINDOW,
-                )
-
-            except RateLimitExceeded:
-                form.add_error(None, "Too many attempts. Please try again later.")
-
-                return render(request, self.template_name, {'form': form})
+            RateLimiter.record_failure(
+                action="login:username",
+                identifier="login:username",
+                window=LoginRateLimitPolicy.USERNAME_FAILURE_WINDOW,
+            )
 
             form.add_error(None, "Invalid username or password")
             return render(request, self.template_name, {'form': form})
 
+        # When Everything is OK.
+        RateLimiter.reset(action="login:username", identifier=username.lower())
         login(request, user)
+
         return redirect("core:home")
 
 
@@ -178,8 +186,8 @@ class BackupCodeRecoveryView(View):
             RateLimiter.check(
                 action="recovery:username",
                 identifier=username.lower(),
-                limit=RecoveryRateLimitPolicy.USERNAME_LIMIT,
-                window=RecoveryRateLimitPolicy.USERNAME_WINDOW,
+                limit=RecoveryRateLimitPolicy.USERNAME_FAILURE_LIMIT,
+                window=RecoveryRateLimitPolicy.USERNAME_FAILURE_WINDOW,
             )
 
         except RateLimitExceeded:
