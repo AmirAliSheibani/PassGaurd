@@ -9,7 +9,7 @@ from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
 from user_app.services.user_services import UserService
 
-from common.security.rate_limit.exceptions import RateLimitExceeded
+from common.security.rate_limit.exceptions import RateLimitExceeded, CooldownActive
 from common.security.rate_limit.limiter import RateLimiter
 from common.security.rate_limit.policies import LoginRateLimitPolicy, RecoveryRateLimitPolicy
 
@@ -324,10 +324,16 @@ class RegenerateBackupCodesView(View):
                 {"form": form},
             )
 
-
-        codes = BackupCodeService.regenerate(
-            user=request.user,
-        )
+        try:
+            codes = BackupCodeService.regenerate(
+                user=request.user,
+            )
+        except CooldownActive:
+            form.add_error(
+                None,
+                "Backup codes were recently regenerated, Please try again later."
+            )
+            return render(request, self.template_name, {'form': form})
 
         request.session["backup_codes"] = codes
 
