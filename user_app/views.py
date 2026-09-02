@@ -297,12 +297,12 @@ class ResetMasterPasswordView(View):
 
         UserService.change_password(user=user, password=form.cleaned_data['password'])
 
-        request.session.pop("recovery_user_id", None)
+        request.session.flush()
 
-        # Restore normal session lifetime before login.
-        request.session.set_expiry(None)
         login(request, user)
 
+        request.session["backup_code_setup_pending"] = True
+        request.session.set_expiry(600)
 
         return redirect("user_app:backup_code_setup")
 
