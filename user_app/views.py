@@ -73,6 +73,9 @@ class LoginView(View):
         # When Everything is OK.
         RateLimiter.reset(action="login:username", identifier=username.lower())
         login(request, user)
+        if not user.recovery_setup_completed:
+            request.session["backup_code_setup_pending"] = True
+            return redirect("user_app:backup_code_setup")
 
         return redirect("core:home")
 
