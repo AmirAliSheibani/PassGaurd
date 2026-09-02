@@ -65,6 +65,8 @@ class RateLimiter:
         if count > limit:
             raise RateLimitExceeded(f"Rate limit exceeded for action '{action}'.")
 
+        return count
+
 
 
     @classmethod
