@@ -10,11 +10,11 @@ class UserSelector:
 
     @classmethod
     def get_by_username(cls, *, username: str) -> User | None:
-        return User.objects.get(username__iexact=username)
+        return User.objects.filter(username__iexact=username).first()
 
     @classmethod
     def get_by_id_if_active(cls, *, user_id: int) -> User | None:
-        return User.objects.get(pk=user_id, is_active=True)
+        return User.objects.filter(pk=user_id).first()
 
     @classmethod
     def exist_by_username(cls, *, username: str) -> bool:
