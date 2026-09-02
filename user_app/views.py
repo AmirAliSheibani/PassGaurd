@@ -124,7 +124,7 @@ class BackupCodeSetupView(View):
         else:
             codes = request.session['backup_codes']
 
-        return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm})
+        return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm()})
 
     def post(self, request):
         if not request.user.is_authenticated:

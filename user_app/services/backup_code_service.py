@@ -126,7 +126,3 @@ class BackupCodeService:
             CooldownService.clear(action="backup-code-regeneration", identifier=identifier)
             raise
 
-
-
-
-
