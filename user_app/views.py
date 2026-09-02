@@ -121,11 +121,21 @@ class BackupCodeSetupView(View):
         if not request.user.is_authenticated:
             return redirect("user_app:login")
 
+
         if not request.session.get('backup_codes'):
+            pending = request.session.get("backup_code_setup_pending", False)
+            if request.user.recovery_setup_completed and not pending:
+                return redirect("core:home")
+
             codes = BackupCodeService.generate(user=request.user)
             request.session['backup_codes'] = codes
         else:
             codes = request.session['backup_codes']
+
+        request.session["backup_code_setup_pending"] = True
+
+        # Recovery codes are sensitive and should not remain available indefinitely in the server-side session.
+        request.session.set_expiry(600)
 
         return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm()})
 
@@ -141,10 +151,16 @@ class BackupCodeSetupView(View):
             if not codes:
                 return redirect("user_app:backup_code_setup")
 
+            request.session.set_expiry(600)
             return render(request, self.template_name, {'codes': codes, 'form': form})
 
-        request.session.pop('backup_codes', None)
+        request.session.pop("backup_codes", None)
+        request.session.pop(
+            "backup_code_setup_pending",
+            None,
+        )
 
+        request.session.set_expiry(None)
         return redirect("core:home")
 
 
