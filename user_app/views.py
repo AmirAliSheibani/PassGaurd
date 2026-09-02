@@ -63,7 +63,7 @@ class LoginView(View):
         if user is None:
             RateLimiter.record_failure(
                 action="login:username",
-                identifier="login:username",
+                identifier=username.lower(),
                 window=LoginRateLimitPolicy.USERNAME_FAILURE_WINDOW,
             )
 
