@@ -154,6 +154,10 @@ class BackupCodeSetupView(View):
             request.session.set_expiry(600)
             return render(request, self.template_name, {'codes': codes, 'form': form})
 
+        # Finish setup
+        UserService.mark_recovery_setup_completed(
+            user=request.user,
+        )
         request.session.pop("backup_codes", None)
         request.session.pop(
             "backup_code_setup_pending",
