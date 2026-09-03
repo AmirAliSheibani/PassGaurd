@@ -8,7 +8,9 @@ class CooldownService:
     Handles temporary cooldown for security-sensitive actions.
     """
 
-    cache = caches["security"]
+    @classmethod
+    def _get_cache(cls):
+        return caches["security"]
 
     @classmethod
     def _build_key(cls, *, action: str, identifier: str) -> str:
@@ -23,7 +25,7 @@ class CooldownService:
 
         key = cls._build_key(action=action, identifier=identifier)
 
-        acquired = cls.cache.add(key, True, timeout=duration)
+        acquired = cls._get_cache().add(key, True, timeout=duration)
         if not acquired:
             raise CooldownActive(f"Action '{action}' is currently on cooldown.")
 
@@ -31,5 +33,5 @@ class CooldownService:
     @classmethod
     def clear(cls, *, action: str, identifier: str) -> None:
         key = cls._build_key(action=action, identifier=identifier)
-        cls.cache.delete(key)
+        cls._get_cache().delete(key)
 

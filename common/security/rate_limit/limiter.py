@@ -13,8 +13,9 @@ class RateLimiter:
     by the configured backend.
     """
 
-    cache = caches["security"]
-
+    @classmethod
+    def _get_cache(cls):
+        return caches["security"]
 
     @classmethod
     def _build_key(cls, *, action: str, identifier: str) -> str:
@@ -37,17 +38,17 @@ class RateLimiter:
         Automatically increment the counter for the current window.
         """
         key = cls._build_key(action=action, identifier=identifier)
-        created = cls.cache.add(key, 1, timeout=window)
+        created = cls._get_cache().add(key, 1, timeout=window)
         if created:
             return 1
         try:
-            return cls.cache.incr(key)
+            return cls._get_cache().incr(key)
         except ValueError:
-            created = cls.cache.add(key, 1, timeout=window)
+            created = cls._get_cache().add(key, 1, timeout=window)
             if created:
                 return 1
 
-            return cls.cache.incr(key)
+            return cls._get_cache().incr(key)
 
 
     @classmethod
@@ -83,7 +84,7 @@ class RateLimiter:
             action=action,
             identifier=identifier,
         )
-        count = cls.cache.get(key, 0)
+        count = cls._get_cache().get(key, 0)
         if count >= limit:
             raise RateLimitExceeded(f"Rate limit exceeded for action '{action}'.")
 
@@ -110,5 +111,5 @@ class RateLimiter:
             identifier=identifier,
         )
 
-        cls.cache.delete(key)
+        cls._get_cache().delete(key)
 
