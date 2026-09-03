@@ -10,7 +10,6 @@ class BackupCodeSelector:
     def get_codes(cls, user):
         return BackupCode.objects.filter(user=user)
 
-
     @classmethod
     def get_active_codes(cls, *, user: User):
         return BackupCode.objects.select_for_update().filter(user=user, is_used=False,).only(
@@ -18,11 +17,13 @@ class BackupCodeSelector:
         "code_hash"
         )
 
-
     @classmethod
     def has_active_codes(cls, *, user: User) -> bool:
         return BackupCode.objects.filter(user=user, is_used=False).exists()
 
+    @classmethod
+    def codes_count(cls, *, user: User) -> int:
+        return BackupCode.objects.filter(user=user).count()
 
     @classmethod
     def remaining_count(cls, *, user: User) -> int:
