@@ -161,7 +161,7 @@ class BackupCodeServiceTests(TestCase):
         )
 
         self.assertEqual(
-            BackupCodeSelector.get_codes(user=self.user),
+            BackupCodeSelector.get_codes(user=self.user).count(),
             BackupCodeService.BACKUP_CODE_COUNT,
         )
 
