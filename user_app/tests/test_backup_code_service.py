@@ -103,11 +103,6 @@ class BackupCodeServiceTests(TestCase):
 
         self.assertTrue(result)
 
-        backup_code = BackupCode.objects.get(
-            user=self.user,
-            code_hash__isnull=False,
-        )
-
         self.assertTrue(
             BackupCode.objects.filter(
                 user=self.user,
