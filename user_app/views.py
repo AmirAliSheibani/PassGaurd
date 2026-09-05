@@ -295,7 +295,7 @@ class ResetMasterPasswordView(View):
             request.session.flush()
             return redirect("user_app:recover")
 
-        UserService.change_password(user=user, password=form.cleaned_data['password'])
+        UserService.change_password(user=user, new_password=form.cleaned_data['password'])
 
         request.session.flush()
 

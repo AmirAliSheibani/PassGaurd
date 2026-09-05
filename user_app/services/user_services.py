@@ -40,7 +40,7 @@ class UserService:
         Mark recovery setup as completed.
         """
         user.recovery_setup_completed = True
-        user.save(update_fields="recovery_setup_completed")
+        user.save(update_fields=["recovery_setup_completed"])
         return user
 
 
