@@ -258,7 +258,7 @@ class BackupCodeRecoveryView(View):
         # Recovery authorization should be short-lived.
         request.session.set_expiry(600)     
 
-        return redirect("user_app:reset-master-password")
+        return redirect("user_app:reset_master_password")
 
 
 class ResetMasterPasswordView(View):
@@ -272,7 +272,7 @@ class ResetMasterPasswordView(View):
         user_id = request.session.get("recovery_user_id")
 
         if not user_id:
-            return redirect("user_app:recover")
+            return redirect("user_app:recovery")
 
         form = ResetPasswordForm()
 
@@ -282,7 +282,7 @@ class ResetMasterPasswordView(View):
         user_id = request.session.get("recovery_user_id")
 
         if not user_id:
-            return redirect("user_app:recover")
+            return redirect("user_app:recovery")
 
         form = ResetPasswordForm(request.POST)
 
@@ -293,7 +293,7 @@ class ResetMasterPasswordView(View):
 
         if user is None:
             request.session.flush()
-            return redirect("user_app:recover")
+            return redirect("user_app:recovery")
 
         UserService.change_password(user=user, new_password=form.cleaned_data['password'])
 

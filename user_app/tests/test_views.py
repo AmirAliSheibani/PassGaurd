@@ -55,12 +55,14 @@ class UserViewTests(TestCase):
         cls.user.recovery_setup_completed = False
         cls.user.save(update_fields=["recovery_setup_completed"])
 
+
     def setUp(self):
         self.factory = RequestFactory()
 
     # ------------------------------------------------------------------
     # Request/session helpers
     # ------------------------------------------------------------------
+
 
     def _request(self, method, path, *, data=None, user=None, ip="127.0.0.1"):
         if method == "GET":
@@ -73,6 +75,7 @@ class UserViewTests(TestCase):
         request.session = SessionStore()
         request.session.create()
         return request
+
 
     def _authenticated_request(self, method="GET", path="/", data=None):
         return self._request(
@@ -1379,3 +1382,4 @@ class UserViewTests(TestCase):
         )
 
         mock_render.assert_called_once()
+         
