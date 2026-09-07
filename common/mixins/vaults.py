@@ -1,5 +1,5 @@
-from django.http import Http404
-from vault_app.models import Vault
+from vault_app.selectors.vault_selector import VaultSelector
+
 
 class VaultObjectMixin:
     """
@@ -7,10 +7,8 @@ class VaultObjectMixin:
     owned by the authenticated user.
     """
     def get_vault(self):
-        try:
-            return Vault.objects.get(
-                pk=self.kwargs["vault_id"],
-                user=self.request.user
-            )
-        except Vault.DoesNotExist:
-            raise Http404
+        return VaultSelector.get_by_username_and_slug_for_user(
+            username=self.kwargs["username"],
+            vault_slug=self.kwargs["vault_slug"],
+            user=self.request.user
+        )
