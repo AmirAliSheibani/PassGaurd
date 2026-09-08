@@ -2,21 +2,32 @@ from django.db import transaction
 from vault_app.models import Vault, Category
 from django.shortcuts import get_object_or_404
 from vault_app.exceptions import DuplicateVaultExceptions, DuplicateCategoryExceptions
-
+from django.utils.text import slugify
 
 class VaultService:
 
     @classmethod
     @transaction.atomic
-    def create(cls, *,user_id: int, data: dict) -> Vault:
-        """
-        Create a new Vault instance
-        """
-        if Vault.objects.filter(user_id=user_id, name__iexact=data["name"]).exists():
-            raise DuplicateVaultExceptions(f'Vault with name {data["name"]} already exists')
+    def create(cls, *, user, name: str, description: str = "", is_default: bool = False) -> Vault:
+        normalized_name = " ".join(name.split())
+        normalized_name = normalized_name.capitalize()
 
-        vault = Vault.objects.create(**data)
-        return vault
+        base_slug = slugify(normalized_name)
+
+        slug = base_slug
+        counter = 2
+
+        while Vault.objects.filter(user=user, slug=slug).exists():
+            slug = f"{base_slug}-{counter}"
+            counter += 1
+
+        return Vault.objects.create(
+            user=user,
+            name=normalized_name,
+            slug=slug,
+            description=description.strip(),
+            is_default=is_default,
+        )
 
     @classmethod
     @transaction.atomic
