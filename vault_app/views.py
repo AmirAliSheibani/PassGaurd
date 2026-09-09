@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 from django.views import View
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, CreateView
 from django.http import Http404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
@@ -137,4 +137,85 @@ class VaultDeleteView(LoginRequiredMixin, VaultObjectMixin, View):
         VaultService.delete(user_id=request.user, data={"pk": vault.pk})
         return redirect("vault_app:list")
 
-    
+
+class CategoryCreateView(LoginRequiredMixin, View):
+     """
+    Create a category for the authenticated user.
+    """
+     template_name = "vault_app/category_form.html"
+     login_url = "user_app:login"
+
+     def get(self, request, *args, **kwargs):
+         form = CategoryForm(user=self.request.user)
+         return render(request, self.template_name, {"form": form})
+
+     def post(self, request):
+         form = CategoryForm(request.POST, user=self.request.user)
+
+         if not form.is_valid():
+             return render(request, self.template_name, {"form": form})
+
+         try:
+             category = CategoryService.create(
+                 user_id=request.user.id,
+                 data=form.cleaned_data,
+             )
+         except DuplicateCategoryExceptions as exc:
+             form.add_error("name", str(exc))
+             return render(request, self.template_name, {"form": form})
+
+         return redirect(
+             "vault_app:categories"
+         )
+
+
+class CategoryUpdateView(LoginRequiredMixin, View):
+    """
+    Create a category for the authenticated user.
+    """
+    template_name = "vault_app/category_form.html"
+    login_url = "user_app:login"
+
+    def _get_category(self, request, category_id):
+        try:
+            return CategorySelector.get_by_id_for_user(
+                category_id=category_id,
+                user_id=request.user.id
+            )
+        except Category.DoesNotExist:
+            raise Http404
+
+    def get(self, request, category_id):
+        category = self._get_category(request, category_id)
+
+        form = CategoryForm(user=request.user, category=category, initial={
+            "name": category.name,
+            "color": category.color,
+        })
+        return render(request, self.template_name, {"form": form})
+
+
+    def post(self, request, category_id):
+        category = self._get_category(request, category_id)
+        form = CategoryForm(request.POST, user=request.user, category=category)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form, "category": category})
+
+        try:
+            CategoryService.update(
+                user_id=request.user.id,
+                data={
+                    "pk": category.pk,
+                    **form.cleaned_data,
+                }
+            )
+        except DuplicateCategoryExceptions as exc:
+            form.add_error("name", str(exc))
+            return render(request, self.template_name, {"form": form, "category": category})
+
+        return redirect(
+            "vault_app:categories",
+        )
+
+
