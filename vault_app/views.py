@@ -9,7 +9,7 @@ from .exceptions import DuplicateCategoryExceptions, DuplicateVaultExceptions
 from .forms import CategoryForm, VaultForm
 from .selectors.vault_selector import VaultSelector, CategorySelector
 from .services.vault_service import VaultService, CategoryService
-from common.mixins.vaults import VaultObjectMixin
+from common.mixins.vaults import VaultObjectMixin, CategoryObjectMixin
 
 
 class VaultListView(LoginRequiredMixin, TemplateView):
@@ -169,24 +169,15 @@ class CategoryCreateView(LoginRequiredMixin, View):
          )
 
 
-class CategoryUpdateView(LoginRequiredMixin, View):
+class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
     """
     Create a category for the authenticated user.
     """
     template_name = "vault_app/category_form.html"
     login_url = "user_app:login"
 
-    def _get_category(self, request, category_id):
-        try:
-            return CategorySelector.get_by_id_for_user(
-                category_id=category_id,
-                user_id=request.user.id
-            )
-        except Category.DoesNotExist:
-            raise Http404
-
     def get(self, request, category_id):
-        category = self._get_category(request, category_id)
+        category = self.get_category(category_id=category_id)
 
         form = CategoryForm(user=request.user, category=category, initial={
             "name": category.name,
