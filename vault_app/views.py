@@ -219,3 +219,31 @@ class CategoryUpdateView(LoginRequiredMixin, View):
         )
 
 
+class CategoryDeleteView(LoginRequiredMixin, View):
+    """
+    Delete a category belonging to the authenticated user.
+    """
+
+    template_name = "vault_app/category_confirm_delete.html"
+    login_url = "user_app:login"
+
+    def _get_category(self, request, category_id):
+        try:
+            return CategorySelector.get_by_id_for_user(
+                category_id=category_id,
+                user_id=request.user.id
+            )
+        except Category.DoesNotExist:
+            raise Http404
+
+    def get(self, request, category_id):
+        category = self._get_category(request, category_id)
+
+        return render(request, self.template_name, {"category": category})
+
+    def post(self, request, category_id):
+        category = self._get_category(request, category_id)
+        CategoryService.delete(user_id=request.user.id, data={"pk": category.pk})
+
+        return redirect("vault_app:categories")
+
