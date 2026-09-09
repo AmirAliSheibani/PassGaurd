@@ -117,4 +117,24 @@ class VaultUpdateView(LoginRequiredMixin, VaultObjectMixin, View):
             username=vault.user.username,
             vault_slug=vault.slug
         )
+
+class VaultDeleteView(LoginRequiredMixin, VaultObjectMixin, View):
+    """
+    Delete a vault owned by the authenticated user.
+
+    Deletion is performed only through POST.
+    """
+    template_name = "vault_app/vault_confirm_delete.html"
+    login_url = "user_app:login"
+
+    def get(self, request, *args, **kwargs):
+        vault = self.get_vault()
+        return render(request, self.template_name, {"vault": vault})
+
+    def post(self, request, *args, **kwargs):
+        vault = self.get_vault()
+
+        VaultService.delete(user_id=request.user, data={"pk": vault.pk})
+        return redirect("vault_app:list")
+
     
