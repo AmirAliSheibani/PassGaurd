@@ -70,12 +70,14 @@ class CategoryService:
     def update(cls, *, user_id: int, data: dict) -> Category:
         category = get_object_or_404(Category, user_id=user_id, pk=data["pk"])
 
-        if Category.objects.filter(user_id=user_id, name__iexact=data["name"]).exists():
-            raise DuplicateCategoryExceptions(f'Category with name {data["name"]} already exists')
+        if Category.objects.filter(user_id=user_id, name__iexact=data["name"]).exclude(pk=category.pk).exists():
+            raise DuplicateCategoryExceptions(f'Category with name "{data["name"]}" already exists.')
 
         category.name = data["name"]
-        category.description = data["color"]
+        category.color = data["color"]
+
         category.save(update_fields=["name", "color"])
+
         return category
 
     @classmethod

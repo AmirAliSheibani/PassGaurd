@@ -6,4 +6,3 @@ from django.shortcuts import render, redirect
 
 
 
-class Vault

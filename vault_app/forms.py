@@ -15,8 +15,9 @@ class VaultForm(forms.Form):
     is_default = forms.BooleanField(required=False, initial=False)
 
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, vault=None, **kwargs):
         self.user = user
+        self.vault = vault
         super().__init__(*args, **kwargs)
 
     def clean_name(self):
@@ -24,7 +25,11 @@ class VaultForm(forms.Form):
         if not name:
             raise ValueError("Vault name is required")
 
-        if self.user and Vault.objects.filter(user=self.user, name__iexact=name).exists():
+        queryset = Vault.objects.filter(user=self.user, name__iexact=name)
+        if self.vault is not None:
+            queryset = queryset.exclude(pk=self.vault.pk)
+
+        if queryset.exists():
             raise ValidationError("You already have a vault with this name.")
 
         return name
@@ -53,8 +58,9 @@ class CategoryForm(forms.Form):
     )
 
 
-    def __init__(self, *args, user=None, **kwargs):
+    def __init__(self, *args, user=None, category=None, **kwargs):
         self.user = user
+        self.category = category
         super().__init__(*args, **kwargs)
 
     def clean_name(self):
@@ -62,7 +68,11 @@ class CategoryForm(forms.Form):
         if not name:
             raise ValueError("Category name is required")
 
-        if self.user and Category.objects.filter(user=self.user, name__iexact=name).exists():
+        queryset = Category.objects.filter(user=self.user, name__iexact=name)
+        if self.category is not None:
+            queryset = queryset.exclude(pk=self.category.pk)
+
+        if queryset.exists():
             raise ValidationError("You already have a category with this name.")
 
         return name
