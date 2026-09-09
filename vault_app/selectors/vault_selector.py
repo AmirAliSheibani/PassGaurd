@@ -26,14 +26,14 @@ class VaultSelector:
 
     @classmethod
     def get_by_default(cls, *, user_id: int) :
-        return Vault.objects.get(pk=user_id, is_default=True)
+        return Vault.objects.get(user_id=user_id, is_default=True)
 
     @classmethod
     def get_user_vaults(cls, *, user_id: int) -> QuerySet[Vault]:
         return Vault.objects.filter(user_id=user_id).order_by("-created_at")
 
     @classmethod
-    def exists_by_name(cls, *, vault_name: int, user_id: int) -> bool:
+    def exists_by_name(cls, *, vault_name: str, user_id: int) -> bool:
         return Vault.objects.filter(name__iexact=vault_name, user_id=user_id).exists()
 
     @classmethod
@@ -60,7 +60,7 @@ class CategorySelector:
         return Category.objects.filter(user_id=user_id).order_by("name")
 
     @classmethod
-    def exists_by_name(cls, *, category_name: int, user_id: int) -> bool:
+    def exists_by_name(cls, *, category_name: str, user_id: int) -> bool:
         return Category.objects.filter(name__iexact=category_name, user_id=user_id).exists()
 
     @classmethod
