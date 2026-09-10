@@ -71,36 +71,56 @@ class VaultService:
 
 
 class CategoryService:
+
     @classmethod
     @transaction.atomic
-    def create(cls, *, user_id: int, data: dict) -> Category:
-        if Category.objects.filter(user_id=user_id, name__iexact=data["name"]).exists():
-            raise DuplicateCategoryExceptions(f'Category with name {data["name"]} already exists')
+    def create(cls, *, user, name: str, color: str) -> Category:
+        normalized_name = " ".join(name.split())
 
-        category = Category.objects.create(user_id=user_id, **data)
+        duplicate_exist = (
+            Category.objects.filter(user=user, name__iexact=normalized_name)
+        ).exists()
+
+        if duplicate_exist:
+            raise DuplicateCategoryExceptions(
+                f'Category with name "{normalized_name}" already exists.'
+            )
+
+        return Category.objects.create(
+            user=user,
+            name=normalized_name,
+            color=color
+        )
+
+    @classmethod
+    @transaction.atomic
+    def update(cls, *, category: Category, name: str, color: str) -> Category:
+        normalized_name = " ".join(name.split())
+
+        duplicate_exist = (
+            Category.objects.filter(user=category.user, name__iexact=normalized_name)
+            .exclude(pk=category.pk)
+            .exists()
+        )
+
+        if duplicate_exist:
+            raise DuplicateCategoryExceptions(
+                f'Category with name "{normalized_name}" already exists.'
+            )
+
+        category.name = normalized_name
+        category.color = color
+        category.save(
+            update_fields=["name", "color"]
+        )
+
         return category
 
     @classmethod
     @transaction.atomic
-    def update(cls, *, user_id: int, data: dict) -> Category:
-        category = get_object_or_404(Category, user_id=user_id, pk=data["pk"])
-
-        if Category.objects.filter(user_id=user_id, name__iexact=data["name"]).exclude(pk=category.pk).exists():
-            raise DuplicateCategoryExceptions(f'Category with name "{data["name"]}" already exists.')
-
-        category.name = data["name"]
-        category.color = data["color"]
-
-        category.save(update_fields=["name", "color"])
-
-        return category
-
-    @classmethod
-    @transaction.atomic
-    def delete(cls, *, user_id: int, data: dict) -> int:
-        category = get_object_or_404(Category, user_id=user_id, pk=data["pk"])
-
+    def delete(cls, *, category: Category) -> int:
         category_id = category.pk
         category.delete()
+        
         return category_id
 
