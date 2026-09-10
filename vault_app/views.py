@@ -176,8 +176,8 @@ class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
     template_name = "vault_app/category_form.html"
     login_url = "user_app:login"
 
-    def get(self, request, category_id):
-        category = self.get_category(category_id=category_id)
+    def get(self, request, *args, **kwargs):
+        category = self.get_category()
 
         form = CategoryForm(user=request.user, category=category, initial={
             "name": category.name,
@@ -186,8 +186,8 @@ class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
         return render(request, self.template_name, {"form": form})
 
 
-    def post(self, request, category_id):
-        category = self._get_category(request, category_id)
+    def post(self, request, *args, **kwargs):
+        category = self.get_category()
         form = CategoryForm(request.POST, user=request.user, category=category)
 
         if not form.is_valid():
@@ -210,7 +210,7 @@ class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
         )
 
 
-class CategoryDeleteView(LoginRequiredMixin, View):
+class CategoryDeleteView(LoginRequiredMixin, CategoryObjectMixin, View):
     """
     Delete a category belonging to the authenticated user.
     """
@@ -218,22 +218,13 @@ class CategoryDeleteView(LoginRequiredMixin, View):
     template_name = "vault_app/category_confirm_delete.html"
     login_url = "user_app:login"
 
-    def _get_category(self, request, category_id):
-        try:
-            return CategorySelector.get_by_id_for_user(
-                category_id=category_id,
-                user_id=request.user.id
-            )
-        except Category.DoesNotExist:
-            raise Http404
-
-    def get(self, request, category_id):
-        category = self._get_category(request, category_id)
+    def get(self, request, *args, **kwargs):
+        category = self.get_category()
 
         return render(request, self.template_name, {"category": category})
 
-    def post(self, request, category_id):
-        category = self._get_category(request, category_id)
+    def post(self, request, *args, **kwargs):
+        category = self.get_category()
         CategoryService.delete(user_id=request.user.id, data={"pk": category.pk})
 
         return redirect("vault_app:categories")

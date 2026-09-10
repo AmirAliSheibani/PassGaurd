@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from vault_app.models import Vault, Category
 from django.shortcuts import get_object_or_404
@@ -13,6 +14,9 @@ class VaultService:
         normalized_name = normalized_name.capitalize()
 
         base_slug = slugify(normalized_name)
+
+        if not base_slug:
+            raise ValidationError( "Vault name must produce a valid slug.")
 
         slug = base_slug
         counter = 2
@@ -31,24 +35,35 @@ class VaultService:
 
     @classmethod
     @transaction.atomic
-    def update(cls, *, user_id: int, data: dict) -> Vault:
+    def update(cls, *, vault: Vault, name: str, description: str = "", is_default: bool = False) -> Vault:
         """
         Update an existing Vault instance
         """
-        vault = get_object_or_404(Vault, user_id=user_id, pk=data["pk"])
+        normalized_name = " ".join(name.split())
+        normalized_name = normalized_name.capitalize()
 
-        if Vault.objects.filter(user_id=user_id, name__iexact=data["name"]).exclude(pk=vault.pk).exists():
-            raise DuplicateVaultExceptions(f'Vault with name {data["name"]} already exists')
+        duplicate_exist = (
+            Vault.objects.filter(user=vault.user, name__iexact=normalized_name)
+            .exclude(pk=vault.pk)
+            .exists()
+        )
+        if duplicate_exist:
+            raise DuplicateVaultExceptions(
+                f'Vault with name "{normalized_name}" already exists.'
+            )
 
-        vault.name = data["name"]
-        vault.description = data["description"]
-        vault.save(update_fields=["name", "description"])
+        vault.name = normalized_name
+        vault.description = description.strip()
+        vault.is_default = is_default
+        vault.save(
+            update_fields=["name", "description", "is_default"]
+        )
+
         return vault
 
     @classmethod
     @transaction.atomic
-    def delete(cls, *, user_id: int, data: dict) -> int:
-        vault = get_object_or_404(Vault, user_id=user_id, pk=data["pk"])
+    def delete(cls, *, vault: Vault) -> int:
 
         vault_id = vault.pk
         vault.delete()
