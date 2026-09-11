@@ -121,6 +121,6 @@ class CategoryService:
     def delete(cls, *, category: Category) -> int:
         category_id = category.pk
         category.delete()
-        
+
         return category_id
 

@@ -210,6 +210,23 @@ class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
         )
 
 
+class CategoryListView(LoginRequiredMixin, TemplateView):
+    """
+    Display all categories belonging to the authenticated user.
+    """
+    template_name = "vault_app/category_list.html"
+    login_url = "user_app:login"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["categories"] = CategorySelector.get_user_categories(
+            user_id=self.request.user.id,
+        )
+        
+        return context
+
+
+
 class CategoryDeleteView(LoginRequiredMixin, CategoryObjectMixin, View):
     """
     Delete a category belonging to the authenticated user.
