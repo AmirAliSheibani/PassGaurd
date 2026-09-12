@@ -156,12 +156,13 @@ class CategoryCreateView(LoginRequiredMixin, View):
              return render(request, self.template_name, {"form": form})
 
          try:
-             category = CategoryService.create(
+             CategoryService.create(
                  user_id=request.user.id,
-                 data=form.cleaned_data,
+                 **form.cleaned_data,
              )
          except DuplicateCategoryExceptions as exc:
              form.add_error("name", str(exc))
+
              return render(request, self.template_name, {"form": form})
 
          return redirect(
@@ -195,11 +196,8 @@ class CategoryUpdateView(LoginRequiredMixin, CategoryObjectMixin, View):
 
         try:
             CategoryService.update(
-                user_id=request.user.id,
-                data={
-                    "pk": category.pk,
-                    **form.cleaned_data,
-                }
+                category=category,
+                **form.cleaned_data,
             )
         except DuplicateCategoryExceptions as exc:
             form.add_error("name", str(exc))
@@ -222,7 +220,7 @@ class CategoryListView(LoginRequiredMixin, TemplateView):
         context["categories"] = CategorySelector.get_user_categories(
             user_id=self.request.user.id,
         )
-        
+
         return context
 
 
