@@ -25,6 +25,11 @@ class Vault(models.Model):
             ),
             models.UniqueConstraint(
                 fields=['user', 'slug'], name='unique_user_vault_slug'
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(is_default=True),
+                name="unique_default_vault_per_user",
             )
         ]
         indexes = [
