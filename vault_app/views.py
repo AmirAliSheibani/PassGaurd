@@ -101,11 +101,8 @@ class VaultUpdateView(LoginRequiredMixin, VaultObjectMixin, View):
 
         try:
             updated_vault = VaultService.update(
-                user_id=request.user,
-                data={
-                    "pk": vault.pk,
-                    **form.cleaned_data,
-                }
+                vault=vault,
+                **form.cleaned_data,
             )
         except DuplicateVaultExceptions as exc:
             form.add_error("name", str(exc))
@@ -134,7 +131,7 @@ class VaultDeleteView(LoginRequiredMixin, VaultObjectMixin, View):
     def post(self, request, *args, **kwargs):
         vault = self.get_vault()
 
-        VaultService.delete(user_id=request.user, data={"pk": vault.pk})
+        VaultService.delete(vault=vault)
         return redirect("vault_app:list")
 
 
@@ -222,7 +219,6 @@ class CategoryListView(LoginRequiredMixin, TemplateView):
         )
 
         return context
-
 
 
 class CategoryDeleteView(LoginRequiredMixin, CategoryObjectMixin, View):

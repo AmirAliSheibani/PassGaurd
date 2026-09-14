@@ -1,10 +1,31 @@
 from django.urls import path
 
-# from .views import VaultDetailView
-
+from .views import (
+    CategoryCreateView,
+    CategoryDeleteView,
+    CategoryListView,
+    CategoryUpdateView,
+    VaultCreateView,
+    VaultDeleteView,
+    VaultDetailView,
+    VaultListView,
+    VaultUpdateView,
+)
 
 app_name = "vault_app"
 
-# urlpatterns = [
-#     path("<str:username>/<slug:vault_slug>/", VaultDetailView.as_view(), name="detail"),
-# ]
+
+urlpatterns = [
+    # Vaults
+    path("vaults/", VaultListView.as_view(), name="list"),
+    path("vaults/create/", VaultCreateView.as_view(), name="create"),
+    path("<str:username>/<slug:vault_slug>/", VaultDetailView.as_view(), name="detail"),
+    path("<str:username>/<slug:vault_slug>/edit/", VaultUpdateView.as_view(), name="update"),
+    path("<str:username>/<slug:vault_slug>/delete/", VaultDeleteView.as_view(), name="delete"),
+
+    # Categories
+    path("categories/", CategoryListView.as_view(), name="categories"),
+    path("categories/create/", CategoryCreateView.as_view(), name="category_create"),
+    path("categories/<int:category_id>/edit/", CategoryUpdateView.as_view(), name="category_update"),
+    path("categories/<int:category_id>/delete/", CategoryDeleteView.as_view(), name="category_delete"),
+]
