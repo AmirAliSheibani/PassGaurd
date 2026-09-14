@@ -70,7 +70,7 @@ class VaultService:
             ).update(
                 is_default=False,
             )
-            
+
         vault.name = normalized_name
         vault.description = description.strip()
         vault.is_default = is_default
