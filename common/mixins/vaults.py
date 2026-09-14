@@ -10,7 +10,7 @@ class VaultObjectMixin:
     def get_vault(self):
         try:
             return VaultSelector.get_by_username_and_slug_for_user(
-                username=self.kwargs["username"],
+                username=self.kwargs["username"], # if username is not request.user.username it returns 404 error
                 vault_slug=self.kwargs["vault_slug"],
                 user=self.request.user
             )

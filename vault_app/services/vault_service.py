@@ -18,8 +18,17 @@ class VaultService:
         if not base_slug:
             raise ValidationError( "Vault name must produce a valid slug.")
 
+        if is_default:
+            Vault.objects.filter(
+                user=user,
+                is_default=True,
+            ).update(
+                is_default=False,
+            )
+
         slug = base_slug
         counter = 2
+
 
         while Vault.objects.filter(user=user, slug=slug).exists():
             slug = f"{base_slug}-{counter}"
@@ -52,6 +61,16 @@ class VaultService:
                 f'Vault with name "{normalized_name}" already exists.'
             )
 
+        if is_default:
+            Vault.objects.filter(
+                user=vault.user,
+                is_default=True,
+            ).exclude(
+                pk=vault.pk,
+            ).update(
+                is_default=False,
+            )
+            
         vault.name = normalized_name
         vault.description = description.strip()
         vault.is_default = is_default
@@ -80,6 +99,8 @@ class CategoryService:
         duplicate_exist = (
             Category.objects.filter(user=user, name__iexact=normalized_name)
         ).exists()
+
+
 
         if duplicate_exist:
             raise DuplicateCategoryExceptions(
