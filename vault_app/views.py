@@ -236,7 +236,7 @@ class CategoryDeleteView(LoginRequiredMixin, CategoryObjectMixin, View):
 
     def post(self, request, *args, **kwargs):
         category = self.get_category()
-        CategoryService.delete(user_id=request.user.id, data={"pk": category.pk})
+        CategoryService.delete(user_id=request.user.id, category=category)
 
         return redirect("vault_app:categories")
 
