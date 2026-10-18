@@ -8,7 +8,7 @@ from django.urls import reverse
 
 class Vault(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="vaults")
-    slug = models.SlugField(unique=True, editable=False)
+    slug = models.SlugField(editable=False)
     name = models.CharField(max_length=100)
     description = models.TextField()
     is_default = models.BooleanField(default=False)
