@@ -24,7 +24,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("", include("core.urls")),
     path("", include("user_app.urls")),
-    # path('vault/', include('vault_app.urls')),
+    path('vault/', include('vault_app.urls')),
     # path('credential/', include('credential_app.urls')),
 
 ]
