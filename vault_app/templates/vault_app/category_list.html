@@ -1,0 +1,7 @@
+<h1>My Categories</h1>
+
+{% for category in categories %}
+    <p>{{ category.name }}</p>
+{% empty %}
+    <p>No categories found.</p>
+{% endfor %}

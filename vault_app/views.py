@@ -154,7 +154,7 @@ class CategoryCreateView(LoginRequiredMixin, View):
 
          try:
              CategoryService.create(
-                 user_id=request.user.id,
+                 user=request.user,
                  **form.cleaned_data,
              )
          except DuplicateCategoryExceptions as exc:
@@ -236,7 +236,7 @@ class CategoryDeleteView(LoginRequiredMixin, CategoryObjectMixin, View):
 
     def post(self, request, *args, **kwargs):
         category = self.get_category()
-        CategoryService.delete(user_id=request.user.id, category=category)
+        CategoryService.delete(category=category)
 
         return redirect("vault_app:categories")
 

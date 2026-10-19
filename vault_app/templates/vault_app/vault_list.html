@@ -1,0 +1,11 @@
+<h1>My Vaults</h1>
+
+{% for vault in vaults %}
+    <p>
+        <a href="{{ vault.get_absolute_url }}">
+            {{ vault.name }}
+        </a>
+    </p>
+{% empty %}
+    <p>No vaults found.</p>
+{% endfor %}
