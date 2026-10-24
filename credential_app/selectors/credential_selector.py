@@ -1,4 +1,4 @@
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from credential_app.models import Credential
 from vault_app.models import Vault
 
@@ -35,27 +35,35 @@ class CredentialSelector:
         return Credential.objects.filter(vault=vault, is_favorite=True)
 
     @classmethod
-    def search(cls, *, vault: Vault, user_id: int, query: str):
-        return (
-            Credential.objects
-            .filter(
-                vault__user_id=user_id,
-            )
-            .filter(
-                Q(service_name__icontains=query)
-                |
-                Q(login_username__icontains=query)
-                |
-                Q(login_email__icontains=query)
-                |
-                Q(category__name__icontains=query)
-                |
-                Q(vault__name__icontains=query)
-            )
-            .select_related(
-                "vault",
-                "category",
-            )
+    def search(
+            cls,
+            *,
+            vault: Vault,
+            user_id: int,
+            query: str,
+    ) -> QuerySet[Credential]:
+        """
+        Search credentials within a specific vault owned by the user.
+        """
+
+        queryset = Credential.objects.filter(
+            vault_id=vault.pk,
+            vault__user_id=user_id,
+        ).select_related(
+            "category",
+        )
+
+        query = query.strip()
+
+        if not query:
+            return queryset
+
+        return queryset.filter(
+            Q(service_name__icontains=query)
+            | Q(service_url__icontains=query)
+            | Q(login_username__icontains=query)
+            | Q(login_email__icontains=query)
+            | Q(category__name__icontains=query)
         )
 
     @classmethod

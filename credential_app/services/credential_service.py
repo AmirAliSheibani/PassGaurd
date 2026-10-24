@@ -2,7 +2,7 @@ from django.db import transaction
 
 from vault_app.models import Vault
 from common.security.encryption.encryption_service import EncryptionService
-from credential_app.exceptions import DuplicateCredential
+from credential_app.exceptions import DuplicateCredential, VaultOwnershipMismatch
 from ..models import Credential, CredentialHistory
 
 
@@ -83,26 +83,42 @@ class CredentialService:
         credential.save(update_fields=["is_favorite", "updated_at"])
         return credential
 
-
     @classmethod
     @transaction.atomic
     def move_to_vault(cls, *, credential: Credential, vault: Vault) -> Credential:
         """
-        move a credential to another vault
+        Move a credential between vaults owned by the same user.
         """
-        exists = Credential.objects.filter(
+
+        if credential.vault.user_id != vault.user_id:
+            raise VaultOwnershipMismatch(
+                "A credential cannot be moved to another user's vault."
+            )
+
+        if credential.vault_id == vault.pk:
+            return credential
+
+        duplicate_exists = Credential.objects.filter(
             vault=vault,
             service_name=credential.service_name,
         ).exclude(
-            pk=credential.pk
-        ).exists() # Each service name for credentials should be unique in each vaults
-        if exists:
+            pk=credential.pk,
+        ).exists()
+
+        if duplicate_exists:
             raise DuplicateCredential(
-                "credential already exists in target vault.",
+                "A credential with this service name already exists in the target vault."
             )
 
         credential.vault = vault
-        credential.save(update_fields=["vault", "updated_at"])
+
+        credential.save(
+            update_fields=[
+                "vault",
+                "updated_at",
+            ]
+        )
+
         return credential
 
 
