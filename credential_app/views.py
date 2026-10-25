@@ -6,6 +6,7 @@ from django.views import View
 from django.views.decorators.cache import never_cache
 from django.views.generic import TemplateView
 
+from common.mixins.credentials import CredentialInVaultMixin
 from common.mixins.vaults import VaultObjectMixin
 from common.security.encryption.encryption_service import EncryptionService
 from common.security.encryption.exceptions import EncryptionError
@@ -23,29 +24,6 @@ from credential_app.services.credential_service import CredentialService
 
 from vault_app.models import Vault
 from vault_app.selectors.vault_selector import VaultSelector
-
-
-class CredentialInVaultMixin(VaultObjectMixin):
-    """
-    Retrieves a credential only if it belongs to the authenticated
-    user and the vault specified in the URL.
-    """
-
-    def get_credential(self) -> Credential:
-        vault = self.get_vault()
-
-        try:
-            credential = CredentialSelector.get_by_id_for_user(
-                credential_id=self.kwargs["pk"],
-               user_id=self.request.user.pk,
-            )
-        except Credential.DoesNotExist:
-            raise Http404
-
-        if credential.vault_id != vault.pk:
-            raise Http404
-
-        return credential
 
 
 class CredentialListView(LoginRequiredMixin, VaultObjectMixin, TemplateView):
