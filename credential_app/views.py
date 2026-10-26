@@ -282,3 +282,4 @@ class CredentialMoveToVaultView(LoginRequiredMixin, CredentialInVaultMixin, View
 
         return redirect("credential_app:detail", username=request.user.username, vault_slug=target_vault.slug,
                         pk=credential.pk, )
+
