@@ -53,7 +53,7 @@ class VaultURLTests(SimpleTestCase):
                 "username": "alice",
                 "vault_slug": "personal",
             },
-            expected_path="/alice/personal/",
+            expected_path="/vault/alice/personal/",
             expected_view=VaultDetailView,
         )
 
@@ -64,7 +64,7 @@ class VaultURLTests(SimpleTestCase):
                 "username": "alice",
                 "vault_slug": "personal",
             },
-            expected_path="/alice/personal/edit/",
+            expected_path="/vault/alice/personal/edit/",
             expected_view=VaultUpdateView,
         )
 
@@ -75,7 +75,7 @@ class VaultURLTests(SimpleTestCase):
                 "username": "alice",
                 "vault_slug": "personal",
             },
-            expected_path="/alice/personal/delete/",
+            expected_path="/vault/alice/personal/delete/",
             expected_view=VaultDeleteView,
         )
 

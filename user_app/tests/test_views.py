@@ -1049,7 +1049,7 @@ class UserViewTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertEqual(
             response.url,
-            "user_app:reset-master-password",
+            "user_app:reset_master_password",
         )
 
         self.assertNotEqual(
@@ -1073,7 +1073,7 @@ class UserViewTests(TestCase):
         )
 
         mock_redirect.assert_called_once_with(
-            "user_app:reset-master-password"
+            "user_app:reset_master_password"
         )
 
     # ------------------------------------------------------------------
@@ -1093,7 +1093,7 @@ class UserViewTests(TestCase):
         response = ResetMasterPasswordView.as_view()(request)
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "user_app:recover")
+        self.assertEqual(response.url, "user_app:recovery")
 
     @patch("user_app.views.render", side_effect=fake_render)
     def test_reset_password_get_renders_form_with_recovery_session(
@@ -1233,7 +1233,7 @@ class UserViewTests(TestCase):
         response = ResetMasterPasswordView.as_view()(request)
 
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, "user_app:recover")
+        self.assertEqual(response.url, "user_app:recovery")
 
         self.assertNotIn(
             "recovery_user_id",
@@ -1246,7 +1246,7 @@ class UserViewTests(TestCase):
         )
 
         mock_redirect.assert_called_once_with(
-            "user_app:recover"
+            "user_app:recovery"
         )
 
     # ------------------------------------------------------------------

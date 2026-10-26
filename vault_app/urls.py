@@ -26,7 +26,7 @@ urlpatterns = [
     path("categories/<int:category_id>/delete/", CategoryDeleteView.as_view(), name="category_delete",),
 
     # Dynamic vault URLs — keep these at the end
-    path("<str:username>/<slug:vault_slug>/edit/", VaultUpdateView.as_view(), name="update",),
-    path("<str:username>/<slug:vault_slug>/delete/", VaultDeleteView.as_view(), name="delete",),
-    path("<str:username>/<slug:vault_slug>/", VaultDetailView.as_view(), name="detail",),
+    path("vault/<str:username>/<slug:vault_slug>/edit/", VaultUpdateView.as_view(), name="update",),
+    path("vault/<str:username>/<slug:vault_slug>/delete/", VaultDeleteView.as_view(), name="delete",),
+    path("vault/<str:username>/<slug:vault_slug>/", VaultDetailView.as_view(), name="detail",),
 ]
