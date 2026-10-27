@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}Edit category{% else %}Create category{% endif %}{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Organization" heading=form_heading description=form_description %}
+  <section class="form-card">
+    {% include "partials/_form_card_header.html" with heading=form_heading description="Choose a concise name and a six-digit HEX color." %}
+    <div class="form-card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" with form=form form_layout="single" %}
+        <p class="form-footnote">Example color: #6B7280. The color is a visual label and does not change how a credential is stored.</p>
+        {% include "partials/_confirm_actions.html" with cancel_url=cancel_url submit_label=submit_label submit_icon="check" %}
+      </form>
+    </div>
+  </section>
+{% endblock %}

@@ -212,7 +212,7 @@ class UserViewTests(TestCase):
 
         mock_authenticate.assert_called_once_with(
             request=request,
-            username="AmIr",
+            username="amir",
             password="wrong-password",
         )
 
@@ -911,7 +911,7 @@ class UserViewTests(TestCase):
 
     @patch("user_app.views.render", side_effect=fake_render)
     @patch("user_app.views.BackupCodeVerificationForm")
-    @patch("user_app.views.UserSelector.get_by_username", return_value=None)
+    @patch("user_app.views.UserSelector.get_by_username_if_active", return_value=None)
     @patch("user_app.views.RateLimiter.record_failure")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -958,7 +958,7 @@ class UserViewTests(TestCase):
     @patch("user_app.views.render", side_effect=fake_render)
     @patch("user_app.views.BackupCodeVerificationForm")
     @patch("user_app.views.BackupCodeService.verify", return_value=False)
-    @patch("user_app.views.UserSelector.get_by_username")
+    @patch("user_app.views.UserSelector.get_by_username_if_active")
     @patch("user_app.views.RateLimiter.record_failure")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -1012,7 +1012,7 @@ class UserViewTests(TestCase):
 
     @patch("user_app.views.redirect", side_effect=fake_redirect)
     @patch("user_app.views.BackupCodeService.verify", return_value=True)
-    @patch("user_app.views.UserSelector.get_by_username")
+    @patch("user_app.views.UserSelector.get_by_username_if_active")
     @patch("user_app.views.RateLimiter.reset")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -1138,7 +1138,7 @@ class UserViewTests(TestCase):
     @patch("user_app.views.redirect", side_effect=fake_redirect)
     @patch("user_app.views.login")
     @patch("user_app.views.UserService.change_password")
-    @patch("user_app.views.UserSelector.get_by_id")
+    @patch("user_app.views.UserSelector.get_by_id_if_active")
     @patch("user_app.views.ResetPasswordForm")
     def test_reset_password_success_changes_password_flushes_session_and_reauthenticates(
         self,
@@ -1207,7 +1207,7 @@ class UserViewTests(TestCase):
         )
 
     @patch("user_app.views.redirect", side_effect=fake_redirect)
-    @patch("user_app.views.UserSelector.get_by_id", return_value=None)
+    @patch("user_app.views.UserSelector.get_by_id_if_active", return_value=None)
     @patch("user_app.views.ResetPasswordForm")
     def test_reset_password_missing_user_flushes_session_and_redirects_to_recovery(
         self,

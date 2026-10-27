@@ -101,6 +101,13 @@ class CredentialModelTests(TestCase):
             with transaction.atomic():
                 self.create_credential(service_name="GitHub")
 
+    def test_service_name_uniqueness_is_case_insensitive_within_a_vault(self):
+        self.create_credential(service_name="GitHub")
+
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                self.create_credential(service_name="github")
+
     def test_same_service_name_is_allowed_in_different_vaults(self):
         first = self.create_credential(
             vault=self.vault,

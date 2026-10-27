@@ -1,0 +1,8 @@
+<article class="stat-card{% if tone %} stat-card--{{ tone }}{% endif %}">
+  <span class="stat-card-icon">{% include "partials/_icon.html" with name=icon_name|default:'key-round' %}</span>
+  <div class="stat-card-copy">
+    <p class="stat-card-label">{{ label }}</p>
+    <p class="stat-card-value">{{ value|default:0 }}</p>
+    {% if note %}<p class="stat-card-note">{{ note }}</p>{% endif %}
+  </div>
+</article>

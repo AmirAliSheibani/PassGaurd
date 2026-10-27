@@ -1,0 +1,6 @@
+<section class="empty-state{% if compact %} empty-state--compact{% endif %}" aria-labelledby="emptyStateHeading">
+  <span class="empty-state-icon">{% include "partials/_icon.html" with name=icon_name|default:'search-x' %}</span>
+  <h3 id="emptyStateHeading">{{ heading|default:"Nothing here yet" }}</h3>
+  {% if description %}<p>{{ description }}</p>{% endif %}
+  {% if action_url and action_label %}<a class="button button-secondary" href="{{ action_url }}">{% if action_icon %}{% include "partials/_icon.html" with name=action_icon %}{% endif %}<span>{{ action_label }}</span></a>{% endif %}
+</section>

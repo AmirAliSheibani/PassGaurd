@@ -1,0 +1,64 @@
+<aside class="sidebar" id="appSidebar" aria-label="Main navigation">
+  <div class="sidebar-header">
+    <a class="brand" href="{% url 'core:home' %}" aria-label="PassGuard home">
+      <span class="brand-mark" aria-hidden="true"><span class="brand-mark-inner"></span></span>
+      <span class="brand-word">PASS<span class="brand-slash">/</span>GUARD</span>
+    </a>
+    <button class="icon-button sidebar-close" type="button" data-sidebar-close aria-label="Close navigation">{% include "partials/_icon.html" with name="x" %}</button>
+  </div>
+
+  <div class="sidebar-scroll">
+    <p class="side-label">WORKSPACE</p>
+    <nav class="primary-nav" aria-label="Workspace">
+      <a class="nav-item{% if active_nav == 'dashboard' or request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'home' %} is-active{% endif %}" href="{% url 'core:home' %}"{% if active_nav == 'dashboard' or request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>
+        {% include "partials/_icon.html" with name="grid" %}<span>Dashboard</span>
+      </a>
+      <a class="nav-item{% if active_nav == 'vaults' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'list' %} is-active{% endif %}" href="{% url 'vault_app:list' %}"{% if active_nav == 'vaults' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'list' %} aria-current="page"{% endif %}>
+        {% include "partials/_icon.html" with name="vault" %}<span>Vaults</span>
+      </a>
+      <a class="nav-item{% if active_nav == 'categories' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category_create' or request.resolver_match.url_name == 'category_update' or request.resolver_match.url_name == 'category_delete' %} is-active{% endif %}" href="{% url 'vault_app:categories' %}"{% if active_nav == 'categories' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category_create' or request.resolver_match.url_name == 'category_update' or request.resolver_match.url_name == 'category_delete' %} aria-current="page"{% endif %}>
+        {% include "partials/_icon.html" with name="tag" %}<span>Categories</span>
+      </a>
+      {% if vault %}
+        <a class="nav-item{% if active_nav == 'favorites' or favorites_only %} is-active{% endif %}" href="{% url 'credential_app:list' username=request.user.username vault_slug=vault.slug %}?favorites=1"{% if active_nav == 'favorites' or favorites_only %} aria-current="page"{% endif %}>
+          {% include "partials/_icon.html" with name="star" %}<span>Favorites</span>
+        </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-section-heading">
+      <p class="side-label">YOUR VAULTS</p>
+      <a class="sidebar-add" href="{% url 'vault_app:create' %}" aria-label="Create vault" title="Create vault">{% include "partials/_icon.html" with name="plus" %}</a>
+    </div>
+    <nav class="vault-nav" aria-label="Your vaults">
+      {% for nav_vault in sidebar_vaults %}
+        <a class="vault-nav-item{% if vault and vault.pk == nav_vault.pk %} is-active{% endif %}" href="{% url 'vault_app:detail' username=request.user.username vault_slug=nav_vault.slug %}"{% if vault and vault.pk == nav_vault.pk %} aria-current="page"{% endif %}>
+          <span class="vault-nav-icon">{% include "partials/_icon.html" with name="vault" %}</span>
+          <span class="vault-nav-name">{{ nav_vault.name }}</span>
+          {% if nav_vault.is_default %}<span class="default-indicator" aria-label="Default vault" title="Default vault"></span>{% endif %}
+        </a>
+      {% empty %}
+        <div class="sidebar-empty"><span>No vaults yet.</span><a href="{% url 'vault_app:create' %}">Create your first vault</a></div>
+      {% endfor %}
+      {% if sidebar_vault_count > 5 %}<a class="vault-nav-more" href="{% url 'vault_app:list' %}">View all vaults {% include "partials/_icon.html" with name="arrow-right" %}</a>{% endif %}
+    </nav>
+
+    <div class="sidebar-security-card">
+      <span class="security-card-icon">{% include "partials/_icon.html" with name="shield-check" %}</span>
+      <div class="security-card-copy">
+        <strong>Account recovery</strong><span>Keep your backup codes current.</span>
+        <a href="{% url 'user_app:regenerate_backup_codes' %}">Manage recovery codes {% include "partials/_icon.html" with name="arrow-right" %}</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="user-summary">
+      <span class="avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</span>
+      <span class="user-summary-copy"><strong>{{ request.user.username }}</strong><span>Personal workspace</span></span>
+    </div>
+    <form method="post" action="{% url 'user_app:logout' %}" class="logout-form">
+      {% csrf_token %}<button class="nav-item nav-item-quiet" type="submit">{% include "partials/_icon.html" with name="log-out" %}<span>Log out</span></button>
+    </form>
+  </div>
+</aside>

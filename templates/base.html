@@ -1,0 +1,59 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b1020">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="PassGuard — manage your credentials in one private workspace.">
+  <title>{% block title %}{{ page_title|default:"Workspace" }}{% endblock %} · PassGuard</title>
+  <link rel="stylesheet" href="{% static 'passguard/css/tokens.css' %}">
+  <link rel="stylesheet" href="{% static 'passguard/css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'passguard/css/layout.css' %}">
+  <link rel="stylesheet" href="{% static 'passguard/css/components.css' %}">
+  <link rel="stylesheet" href="{% static 'passguard/css/pages.css' %}">
+  <link rel="stylesheet" href="{% static 'passguard/css/responsive.css' %}">
+  {% block extra_css %}{% endblock %}
+  <script defer src="{% static 'passguard/js/app.js' %}"></script>
+  {% block extra_js_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  {% include "partials/_icon_sprite.html" %}
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+
+  <div class="app-shell{% if not request.user.is_authenticated %} app-shell--auth{% endif %}">
+    {% if request.user.is_authenticated %}
+      {% include "partials/_sidebar.html" %}
+    {% endif %}
+
+    <div class="main-column">
+      {% if request.user.is_authenticated %}
+        {% include "partials/_topbar.html" %}
+      {% else %}
+        <header class="auth-topbar">
+          <a class="brand" href="{% url 'core:home' %}" aria-label="PassGuard home">
+            <span class="brand-mark" aria-hidden="true"><span class="brand-mark-inner"></span></span>
+            <span class="brand-word">PASS<span class="brand-slash">/</span>GUARD</span>
+          </a>
+          <span class="auth-topbar-note">Private by design</span>
+        </header>
+      {% endif %}
+
+      <main class="main-content" id="mainContent" tabindex="-1">
+        {% include "partials/_messages.html" %}
+        {% block content %}{% endblock %}
+      </main>
+
+      <footer class="app-footer">
+        <span>PASS/GUARD <span class="footer-separator">/</span> PERSONAL CREDENTIALS</span>
+        <span class="footer-note">Keep your recovery codes somewhere safe.</span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="mobile-scrim" data-sidebar-close hidden></div>
+  <div class="toast-region" data-toast-region role="status" aria-live="polite" aria-atomic="true"></div>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

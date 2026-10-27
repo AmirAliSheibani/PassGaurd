@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}{% if request.user.is_authenticated %}Workspace{% else %}Password manager{% endif %}{% endblock %}
+
+{% block content %}
+  {% if request.user.is_authenticated %}
+    {% include "partials/_page_header.html" with kicker="Personal workspace" heading="Your workspace" description="Keep the credentials you use in one organized place." action_url=vault_create_url action_label="Create a vault" action_icon="plus" %}
+
+    <div class="page-stack">
+      <section class="stats-grid" aria-label="Workspace overview">
+        {% include "partials/_stat_card.html" with icon_name="vault" label="Vaults" value=vault_count note="Separate collections" %}
+        {% include "partials/_stat_card.html" with icon_name="key-round" label="Credentials" value=total_credential_count note="Stored in your vaults" tone="success" %}
+        {% include "partials/_stat_card.html" with icon_name="tag" label="Categories" value=category_count note="For organizing entries" tone="violet" %}
+      </section>
+
+      <section aria-labelledby="yourVaultsHeading">
+        <div class="section-heading">
+          <div>
+            <h2 id="yourVaultsHeading">Your vaults</h2>
+            <p>{% if vault_count %}Open a vault to browse or manage its credentials.{% else %}Create your first vault to get started.{% endif %}</p>
+          </div>
+          {% if vault_count %}<a class="text-link" href="{% url 'vault_app:list' %}">View all vaults {% include "partials/_icon.html" with name="arrow-right" %}</a>{% endif %}
+        </div>
+
+        {% if vaults %}
+          <div class="vault-grid">
+            {% for vault in vaults %}
+              {% include "partials/_vault_card.html" with vault=vault credential_count=vault.credential_count %}
+            {% endfor %}
+          </div>
+        {% else %}
+          {% include "partials/_empty_state.html" with icon_name="vault" heading="Your first vault starts here" description="A vault keeps related sign-in details together. You can create separate vaults for different parts of your digital life." action_url=vault_create_url action_label="Create your first vault" action_icon="plus" %}
+        {% endif %}
+      </section>
+
+      <section class="panel" aria-labelledby="recoveryPanelHeading">
+        <div class="panel-header">
+          <div>
+            <h2 id="recoveryPanelHeading">Account recovery</h2>
+            <p>Keep your recovery codes somewhere private and accessible to you.</p>
+          </div>
+          {% include "partials/_icon.html" with name="shield-check" %}
+        </div>
+        <div class="panel-body">
+          <p class="text-muted">Recovery codes can help you regain access if you forget your master password. Store them offline and never share them.</p>
+          <a class="button button-secondary" href="{% url 'user_app:regenerate_backup_codes' %}">Manage recovery codes {% include "partials/_icon.html" with name="arrow-right" %}</a>
+        </div>
+      </section>
+    </div>
+  {% else %}
+    <div class="auth-shell-placeholder">
+      <section class="form-card">
+        <header class="form-card-header">
+          <p class="eyebrow"><span class="eyebrow-mark"></span>PASS/GUARD</p>
+          <h1 class="page-heading">Your credentials, organized.</h1>
+          <p>Keep the sign-in details you choose to store in one personal workspace, with vaults and categories to keep things tidy.</p>
+        </header>
+        <div class="form-card-body">
+          <div class="page-stack">
+            <a class="button button-primary button-block" href="{% url 'user_app:register' %}">Create your account {% include "partials/_icon.html" with name="arrow-right" %}</a>
+            <a class="button button-secondary button-block" href="{% url 'user_app:login' %}">Sign in</a>
+          </div>
+          <p class="form-footnote">Choose a strong master password and save your recovery codes somewhere safe.</p>
+        </div>
+      </section>
+    </div>
+  {% endif %}
+{% endblock %}

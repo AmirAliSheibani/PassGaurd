@@ -1,0 +1,7 @@
+<div class="form-actions">
+  {% if cancel_url %}<a class="button button-secondary" href="{{ cancel_url }}">Cancel</a>{% endif %}
+  <button class="button{% if danger %} button-danger{% else %} button-primary{% endif %}" type="submit"{% if confirm_message %} data-confirm="{{ confirm_message }}"{% endif %}>
+    {% if submit_icon %}{% include "partials/_icon.html" with name=submit_icon %}{% endif %}
+    <span>{{ submit_label|default:"Save changes" }}</span>
+  </button>
+</div>

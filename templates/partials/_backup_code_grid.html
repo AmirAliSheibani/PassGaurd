@@ -1,0 +1,19 @@
+{# Use only on the one-time backup-code presentation/confirmation screen. #}
+<section class="backup-code-section" aria-labelledby="backupCodesHeading">
+  <div class="backup-code-intro">
+    <h3 id="backupCodesHeading">Your backup codes</h3>
+    <p>Save these codes somewhere offline. Each code can be used once. This list should only be shown during the intended setup or regeneration flow.</p>
+  </div>
+  <div class="backup-code-grid" aria-label="Backup codes">
+    {% for code in codes %}
+      <div class="backup-code">
+        <code id="backup-code-{{ forloop.counter }}">{{ code }}</code>
+        <button class="icon-button icon-button--small" type="button" data-copy-target="backup-code-{{ forloop.counter }}" aria-label="Copy backup code {{ forloop.counter }}" data-copy-success="Backup code copied.">{% include "partials/_icon.html" with name="copy" %}</button>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="backup-code-actions">
+    <button class="button button-secondary" type="button" data-copy-backup-codes>{% include "partials/_icon.html" with name="copy" %}<span>Copy all codes</span></button>
+    <button class="button button-primary" type="button" data-download-backup-codes>{% include "partials/_icon.html" with name="download" %}<span>Download .txt</span></button>
+  </div>
+</section>

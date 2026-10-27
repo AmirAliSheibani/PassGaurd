@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.functions import Lower
+import uuid
 
 from user_app.models import CustomUser
 from django.utils.text import slugify
@@ -21,7 +23,9 @@ class Vault(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'name'], name='unique_user_vault_name'
+                Lower("name"),
+                "user",
+                name="unique_user_vault_name_ci",
             ),
             models.UniqueConstraint(
                 fields=['user', 'slug'], name='unique_user_vault_slug'
@@ -47,7 +51,7 @@ class Vault(models.Model):
         self.name = self.name.capitalize()
 
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name) or f"vault-{uuid.uuid4().hex[:8]}"
 
         super().save(*args, **kwargs)
 
@@ -74,7 +78,9 @@ class Category(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'name'], name='unique_user_category_name'
+                Lower("name"),
+                "user",
+                name="unique_user_category_name_ci",
             )
         ]
 

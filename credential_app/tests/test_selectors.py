@@ -202,6 +202,13 @@ class CredentialSelectorTests(TestCase):
             )
         )
 
+        self.assertTrue(
+            CredentialSelector.exists_by_name(
+                vault=self.alice_vault,
+                service_name="gItHuB",
+            )
+        )
+
         self.assertFalse(
             CredentialSelector.exists_by_name(
                 vault=self.alice_vault,

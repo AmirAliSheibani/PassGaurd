@@ -1,0 +1,37 @@
+<header class="topbar">
+  <div class="topbar-leading">
+    <button class="icon-button menu-toggle" type="button" data-sidebar-open aria-label="Open navigation" aria-controls="appSidebar" aria-expanded="false">{% include "partials/_icon.html" with name="menu" %}</button>
+    <div class="topbar-title-group">
+      <p class="topbar-eyebrow">PASSGUARD <span>/</span> {% if vault %}{{ vault.name }}{% else %}WORKSPACE{% endif %}</p>
+      <p class="topbar-context">{% if vault %}Current vault{% else %}Personal workspace{% endif %}</p>
+    </div>
+  </div>
+
+  <div class="topbar-actions">
+    {% if vault and request.resolver_match.namespace == 'credential_app' %}
+      <form class="topbar-search" method="get" action="{% url 'credential_app:list' username=request.user.username vault_slug=vault.slug %}" role="search">
+        {% include "partials/_icon.html" with name="search" %}
+        <label class="visually-hidden" for="topbarSearch">Search credentials in {{ vault.name }}</label>
+        <input id="topbarSearch" type="search" name="q" value="{{ query|default:'' }}" placeholder="Search this vault…" autocomplete="off" spellcheck="false">
+        {% if favorites_only %}<input type="hidden" name="favorites" value="1">{% endif %}
+        <kbd aria-hidden="true">/</kbd>
+      </form>
+    {% elif vault and request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'update' %}
+      <a class="button button-secondary" href="{{ vault.get_absolute_url }}">{% include "partials/_icon.html" with name="arrow-left" %}<span>View vault</span></a>
+    {% elif request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'categories' %}
+      {# The category list header already contains its primary Create category action. #}
+    {% elif request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'category_update' %}
+      <a class="button button-secondary" href="{% url 'vault_app:categories' %}">{% include "partials/_icon.html" with name="arrow-left" %}<span>All categories</span></a>
+    {% elif request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'category_create' %}
+      <a class="button button-secondary" href="{% url 'vault_app:categories' %}">{% include "partials/_icon.html" with name="arrow-left" %}<span>All categories</span></a>
+    {% elif request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'detail' %}
+      {# The vault page header already contains its primary Add credential action. #}
+    {% elif request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'list' %}
+      {# The vault list page header already contains Create vault. #}
+    {% elif request.resolver_match.namespace == 'core' and request.resolver_match.url_name == 'home' %}
+      {# The dashboard page header already provides the primary action. #}
+    {% else %}
+      <a class="button button-secondary" aria-label="Create a vault" href="{% url 'vault_app:create' %}">{% include "partials/_icon.html" with name="plus-square" %}<span>New vault</span></a>
+    {% endif %}
+  </div>
+</header>

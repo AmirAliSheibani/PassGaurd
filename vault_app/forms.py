@@ -23,7 +23,7 @@ class VaultForm(forms.Form):
     def clean_name(self):
         name = " ".join(self.cleaned_data["name"].split())
         if not name:
-            raise ValueError("Vault name is required")
+            raise ValidationError("Vault name is required")
 
         queryset = Vault.objects.filter(user=self.user, name__iexact=name)
         if self.vault is not None:
@@ -66,7 +66,7 @@ class CategoryForm(forms.Form):
     def clean_name(self):
         name = " ".join(self.cleaned_data["name"].split())
         if not name:
-            raise ValueError("Category name is required")
+            raise ValidationError("Category name is required")
 
         queryset = Category.objects.filter(user=self.user, name__iexact=name)
         if self.category is not None:

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load passguard_ui %}
+{% block title %}Delete {{ category.name }}{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Organization" heading="Delete category" description="Removing a category does not delete the credentials that use it." %}
+  <section class="form-card">
+    <div class="form-card-body">
+      <div class="danger-panel" role="alert">
+        {% include "partials/_icon.html" with name="alert-triangle" %}
+        <div>
+          <strong>Delete “{{ category.name }}”?</strong>
+          <p>Credentials assigned to this category will remain in their vaults, but they will no longer have this category attached.</p>
+        </div>
+      </div>
+      <div class="category-card category-card--spaced">
+        <span class="category-card-dot" style="--category-color: {{ category.color|hex_color }}" aria-hidden="true"></span>
+        <div class="category-card-copy"><strong>{{ category.name }}</strong><span>{{ category.color }}</span></div>
+      </div>
+      <form method="post" class="form-actions">
+        {% csrf_token %}
+        <a class="button button-secondary" href="{% url 'vault_app:categories' %}">Keep category</a>
+        <button class="button button-danger" type="submit" data-confirm="Delete this category? Existing credentials will remain uncategorized.">Delete category</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

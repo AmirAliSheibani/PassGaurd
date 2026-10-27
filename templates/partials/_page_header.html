@@ -1,0 +1,10 @@
+<section class="page-header" aria-labelledby="pageHeading">
+  <div class="page-header-copy">
+    {% if kicker %}<p class="eyebrow"><span class="eyebrow-mark"></span>{{ kicker }}</p>{% endif %}
+    <h1 class="page-heading" id="pageHeading">{{ heading }}</h1>
+    {% if description %}<p class="page-description">{{ description }}</p>{% endif %}
+  </div>
+  {% if action_url and action_label %}
+    <a class="button button-primary" href="{{ action_url }}">{% if action_icon %}{% include "partials/_icon.html" with name=action_icon %}{% endif %}<span>{{ action_label }}</span></a>
+  {% endif %}
+</section>

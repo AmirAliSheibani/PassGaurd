@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Vaults{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Workspace" heading="Your vaults" description="Keep separate groups of credentials organized by purpose." action_url=create_url action_label="Create vault" action_icon="plus" %}
+
+  {% if vaults %}
+    <div class="vault-grid">
+      {% for vault in vaults %}
+        {% include "partials/_vault_card.html" with vault=vault credential_count=vault.credential_count %}
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "partials/_empty_state.html" with icon_name="vault" heading="No vaults yet" description="Create a vault to start saving sign-in details. You can make one vault the default for your workspace." action_url=create_url action_label="Create your first vault" action_icon="plus" %}
+  {% endif %}
+{% endblock %}

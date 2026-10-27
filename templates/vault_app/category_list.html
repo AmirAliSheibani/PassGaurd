@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load passguard_ui %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Organization" heading="Categories" description="Use categories to label credential entries consistently." action_url=create_url action_label="Create category" action_icon="plus" %}
+
+  {% if categories %}
+    <div class="category-grid">
+      {% for category in categories %}
+        <article class="category-card">
+          <span class="category-card-dot" style="--category-color: {{ category.color|hex_color }}" aria-hidden="true"></span>
+          <div class="category-card-copy">
+            <strong>{{ category.name }}</strong>
+            <span>{{ category.color|upper }}</span>
+          </div>
+          <div class="inline-actions">
+            <a class="icon-button icon-button--small" href="{% url 'vault_app:category_update' category_id=category.pk %}" aria-label="Edit {{ category.name }}" title="Edit category">{% include "partials/_icon.html" with name="pencil" %}</a>
+            <a class="icon-button icon-button--small" href="{% url 'vault_app:category_delete' category_id=category.pk %}" aria-label="Delete {{ category.name }}" title="Delete category">{% include "partials/_icon.html" with name="trash-2" %}</a>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "partials/_empty_state.html" with icon_name="tag" heading="No categories yet" description="Create categories such as Personal, Work, or Finance to make credentials easier to scan." action_url=create_url action_label="Create your first category" action_icon="plus" %}
+  {% endif %}
+{% endblock %}

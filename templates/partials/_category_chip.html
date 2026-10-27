@@ -1,0 +1,4 @@
+{% load passguard_ui %}
+<span class="category-chip"{% if category.color %} style="--category-color: {{ category.color|hex_color }}"{% endif %}>
+  <span class="category-chip-dot" aria-hidden="true"></span>{{ category.name }}
+</span>

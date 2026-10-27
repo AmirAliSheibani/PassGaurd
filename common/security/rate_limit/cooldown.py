@@ -1,7 +1,7 @@
 import hashlib
 from django.core.cache import caches
 
-from.exceptions import CooldownActive
+from .exceptions import CooldownActive
 
 class CooldownService:
     """

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Regenerate backup codes{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Account recovery" heading="Regenerate backup codes" description="Replace the existing recovery codes with a fresh set." %}
+
+  <section class="form-card">
+    {% include "partials/_form_card_header.html" with heading="Before you continue" description="The new codes will be shown on the next screen. Save them before leaving that page." %}
+    <div class="form-card-body">
+      <div class="danger-panel warning-panel form-notice" role="note">
+        {% include "partials/_icon.html" with name="alert-triangle" %}
+        <div>
+          <strong>Existing backup codes will stop working</strong>
+          <p>After regeneration, keep the new codes private and store them somewhere you can access if you are locked out.</p>
+        </div>
+      </div>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "partials/_form_fields.html" with form=form form_layout="single" %}
+        {% url 'core:home' as home_url %}
+        {% include "partials/_confirm_actions.html" with cancel_url=home_url submit_label="Regenerate codes" submit_icon="refresh-cw" danger=True confirm_message="Regenerate backup codes? Your existing codes will become invalid." %}
+      </form>
+    </div>
+  </section>
+{% endblock %}

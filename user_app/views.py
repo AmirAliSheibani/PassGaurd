@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
 
@@ -54,10 +55,16 @@ class LoginView(View):
             form.add_error(None, "Too many attempts. Please try again later.")
             return render(request, self.template_name, {'form': form})
 
+        # The database enforces case-insensitive username uniqueness. Resolve the
+        # stored spelling before authentication so login behaves consistently with
+        # registration, selectors, and account recovery on case-sensitive databases.
+        matched_user = UserSelector.get_by_username_if_active(username=username)
+        username_for_auth = matched_user.username if matched_user is not None else username
+
         user = authenticate(
             request=request,
-            username=username,
-            password=password
+            username=username_for_auth,
+            password=password,
         )
 
         if user is None:
@@ -104,10 +111,15 @@ class RegisterView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
 
-        user = UserService.register(
-            username=form.cleaned_data['username'],
-            password=form.cleaned_data['password']
-        )
+        try:
+            user = UserService.register(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+        except (ValueError, ValidationError) as exc:
+            form.add_error(None, str(exc))
+            return render(request, self.template_name, {'form': form})
+
         login(request, user)
         return redirect("user_app:backup_code_setup")
 
@@ -222,7 +234,7 @@ class BackupCodeRecoveryView(View):
                 {"form": form},
             )
 
-        user = UserSelector.get_by_username(username=username)
+        user = UserSelector.get_by_username_if_active(username=username)
 
         # Deliberately do not reveal whether the username exists.
         if user is None:
@@ -274,8 +286,12 @@ class ResetMasterPasswordView(View):
         if not user_id:
             return redirect("user_app:recovery")
 
-        form = ResetPasswordForm()
+        user = UserSelector.get_by_id_if_active(user_id=user_id)
+        if user is None:
+            request.session.flush()
+            return redirect("user_app:recovery")
 
+        form = ResetPasswordForm(user=user)
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
@@ -284,18 +300,20 @@ class ResetMasterPasswordView(View):
         if not user_id:
             return redirect("user_app:recovery")
 
-        form = ResetPasswordForm(request.POST)
-
-        if not form.is_valid():
-            return render(request, self.template_name, {'form': form})
-
-        user = UserSelector.get_by_id(user_id=user_id)
-
+        user = UserSelector.get_by_id_if_active(user_id=user_id)
         if user is None:
             request.session.flush()
             return redirect("user_app:recovery")
 
-        UserService.change_password(user=user, new_password=form.cleaned_data['password'])
+        form = ResetPasswordForm(request.POST, user=user)
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
+        try:
+            UserService.change_password(user=user, new_password=form.cleaned_data['password'])
+        except (ValueError, ValidationError) as exc:
+            form.add_error("password", str(exc))
+            return render(request, self.template_name, {'form': form})
 
         request.session.flush()
 

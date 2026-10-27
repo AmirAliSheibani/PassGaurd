@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Save recovery codes{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Account recovery" heading="Save your backup codes" description="These codes are shown for this setup flow. Save them before confirming; each code can be used once." %}
+
+  <div class="page-stack">
+    <section class="warning-panel" role="note">
+      {% include "partials/_icon.html" with name="alert-triangle" %}
+      <div>
+        <strong>Keep these codes private</strong>
+        <p>Store them offline or in a separate secure place. Anyone who has a valid unused code may be able to start account recovery.</p>
+      </div>
+    </section>
+
+    <section class="form-card">
+      <div class="form-card-body">
+        {% include "partials/_backup_code_grid.html" with codes=codes %}
+        <form method="post" novalidate>
+          {% csrf_token %}
+          <div class="form-grid form-grid--single form-grid--spaced">
+            {% include "partials/_form_errors.html" with form=form %}
+            {% include "partials/_form_field.html" with field=form.confirmed %}
+          </div>
+          <div class="form-actions">
+            <button class="button button-primary" type="submit">I saved my codes {% include "partials/_icon.html" with name="check-circle" %}</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+{% endblock %}

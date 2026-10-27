@@ -1,0 +1,34 @@
+{% if field.is_hidden %}
+  {{ field }}
+{% else %}
+  <div class="form-field{% if field.errors %} has-error{% endif %}{% if field.field.widget.input_type == 'checkbox' %} form-field-checkbox{% endif %}{% if field.field.widget.input_type == 'password' %} form-field-password{% endif %}{% if field.field.widget.attrs.rows %} form-field-textarea{% endif %}">
+    {% if field.field.widget.input_type == 'checkbox' %}
+      <label class="checkbox-control" for="{{ field.id_for_label }}">
+        {{ field }}
+        <span class="checkbox-visual" aria-hidden="true"></span>
+        <span class="checkbox-copy"><span class="field-label-text">{{ field.label }}</span>{% if field.help_text %}<span class="field-help">{{ field.help_text }}</span>{% endif %}</span>
+      </label>
+    {% else %}
+      <label class="field-label" for="{{ field.id_for_label }}">
+        {{ field.label }}{% if field.field.required %}<span class="required-mark" aria-label="required">*</span>{% endif %}
+      </label>
+      {% if field.field.widget.input_type == 'password' %}
+        <div class="password-control">
+          {{ field }}
+          <button class="password-control-action" type="button" data-password-toggle="{{ field.id_for_label }}" aria-label="Show {{ field.label|lower }}" aria-pressed="false">{% include "partials/_icon.html" with name="eye" %}</button>
+          {% if allow_password_generation and field.name == 'password' or allow_password_generation and field.name == 'new_password' %}
+            <button class="password-control-action password-generate" type="button" data-generate-password-for="{{ field.id_for_label }}" aria-label="Generate a secure password" title="Generate a secure password">{% include "partials/_icon.html" with name="refresh-cw" %}</button>
+          {% endif %}
+        </div>
+      {% else %}
+        {{ field }}
+      {% endif %}
+      {% if field.help_text %}<p class="field-help" id="{{ field.auto_id }}_help">{{ field.help_text }}</p>{% endif %}
+    {% endif %}
+    {% if field.errors %}
+      <ul class="field-errors" role="alert"{% if field.id_for_label %} id="{{ field.auto_id }}_errors"{% endif %}>
+        {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+{% endif %}

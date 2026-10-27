@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Recover account{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+  <div class="auth-shell-placeholder">
+    <section class="form-card" aria-labelledby="recoveryHeading">
+      <header class="form-card-header">
+        <p class="eyebrow"><span class="eyebrow-mark"></span>ACCOUNT RECOVERY</p>
+        <h1 id="recoveryHeading">Recover your account</h1>
+        <p>Enter your username and one unused 12-digit backup code. Recovery authorization expires after a short period.</p>
+      </header>
+      <div class="form-card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include "partials/_form_errors.html" with form=form %}
+          <div class="form-grid form-grid--single">
+            {% include "partials/_form_field.html" with field=form.username %}
+            {% include "partials/_form_field.html" with field=form.code %}
+          </div>
+          <div class="form-actions">
+            <a class="button button-secondary" href="{% url 'user_app:login' %}">Back to sign in</a>
+            <button class="button button-primary" type="submit">Verify code {% include "partials/_icon.html" with name="arrow-right" %}</button>
+          </div>
+        </form>
+        <p class="form-footnote">For your security, the form does not indicate whether a username exists.</p>
+      </div>
+    </section>
+  </div>
+{% endblock %}

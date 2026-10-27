@@ -1,0 +1,15 @@
+{% if messages %}
+  <div class="messages-stack" aria-label="Notifications">
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags|default:'info' }}" role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">
+        <span class="alert-icon">
+          {% if message.tags == 'success' %}{% include "partials/_icon.html" with name="check-circle" %}
+          {% elif message.tags == 'error' %}{% include "partials/_icon.html" with name="alert-triangle" %}
+          {% else %}{% include "partials/_icon.html" with name="info" %}{% endif %}
+        </span>
+        <p>{{ message }}</p>
+        <button class="icon-button alert-dismiss" type="button" data-dismiss-message aria-label="Dismiss notification">{% include "partials/_icon.html" with name="x" %}</button>
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

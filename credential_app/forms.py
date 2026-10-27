@@ -65,7 +65,7 @@ class CredentialBaseForm(forms.Form):
         if self.vault is None:
             return
 
-        qs = Credential.objects.filter(vault=self.vault, service_name=service_name)
+        qs = Credential.objects.filter(vault=self.vault, service_name__iexact=service_name.strip())
 
         if self.credential is not None:
             qs = qs.exclude(pk=self.credential.id)
@@ -153,12 +153,12 @@ class CredentialMoveToVaultForm(forms.Form):
             if target_vault == self.credential.vault:
                 raise ValidationError("This Credential is already in that Vault")
 
-            duplicate_exsist = Credential.objects.filter(
-                vault=self.credential.vault,
+            duplicate_exists = Credential.objects.filter(
+                vault=target_vault,
                 service_name__iexact=self.credential.service_name,
-            ).exclude(pk=self.credential.id).exists()
+            ).exclude(pk=self.credential.pk).exists()
 
-            if duplicate_exsist:
+            if duplicate_exists:
                 raise ValidationError(
                     "A Credential with this service name already exists in the target Vault."
                 )

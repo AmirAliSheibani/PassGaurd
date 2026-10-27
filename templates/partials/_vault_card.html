@@ -1,0 +1,12 @@
+<article class="vault-card{% if vault.is_default %} vault-card--default{% endif %}">
+  <div class="vault-card-topline">
+    <span class="vault-card-icon">{% include "partials/_icon.html" with name="vault" %}</span>
+    {% if vault.is_default %}<span class="badge badge-default">Default</span>{% endif %}
+  </div>
+  <h3 class="vault-card-title"><a href="{% url 'vault_app:detail' username=request.user.username vault_slug=vault.slug %}">{{ vault.name }}</a></h3>
+  {% if vault.description %}<p class="vault-card-description">{{ vault.description }}</p>{% else %}<p class="vault-card-description vault-card-description--muted">No description added.</p>{% endif %}
+  <div class="vault-card-footer">
+    {% if credential_count is not None %}<span>{{ credential_count }} credential{{ credential_count|pluralize }}</span>{% endif %}
+    <a class="text-link" href="{% url 'vault_app:detail' username=request.user.username vault_slug=vault.slug %}">Open vault {% include "partials/_icon.html" with name="arrow-right" %}</a>
+  </div>
+</article>

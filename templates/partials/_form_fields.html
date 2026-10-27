@@ -1,0 +1,6 @@
+{% include "partials/_form_errors.html" with form=form %}
+<div class="form-grid{% if form_layout %} form-grid--{{ form_layout }}{% endif %}">
+  {% for field in form %}
+    {% include "partials/_form_field.html" with field=field allow_password_generation=allow_password_generation %}
+  {% endfor %}
+</div>

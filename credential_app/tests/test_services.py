@@ -4,7 +4,7 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from credential_app.exceptions import DuplicateCredential
+from credential_app.exceptions import CategoryOwnershipMismatch, DuplicateCredential
 from credential_app.models import Credential, CredentialHistory
 from credential_app.services.credential_service import CredentialService
 from vault_app.models import Category, Vault
@@ -47,6 +47,10 @@ class CredentialServiceTests(TestCase):
         cls.category = Category.objects.create(
             user=cls.alice,
             name="Social",
+        )
+        cls.bob_category = Category.objects.create(
+            user=cls.bob,
+            name="Private",
         )
 
     def create_credential(
@@ -256,3 +260,57 @@ class CredentialServiceTests(TestCase):
         self.assertFalse(
             CredentialHistory.objects.filter(pk=history_id).exists()
         )
+
+
+    def test_create_ignores_confirmation_and_unexpected_fields(self):
+        data = {
+            "category": self.category,
+            "service_name": "New service",
+            "service_url": "https://example.com",
+            "login_username": "alice-dev",
+            "login_email": "alice@example.com",
+            "password": "plain-secret",
+            "confirm_password": "plain-secret",
+            "unexpected_field": "must not reach the model",
+        }
+        with patch(
+            "credential_app.services.credential_service.EncryptionService.encrypt",
+            return_value="encrypted-secret",
+        ):
+            credential = CredentialService.create(vault=self.alice_vault, data=data)
+
+        self.assertEqual(credential.service_name, "New service")
+        self.assertEqual(credential.password_ciphertext, "encrypted-secret")
+        self.assertFalse(hasattr(credential, "confirm_password"))
+
+    def test_create_rejects_case_insensitive_duplicate_name(self):
+        self.create_credential(service_name="GitHub")
+        with self.assertRaises(DuplicateCredential):
+            CredentialService.create(
+                vault=self.alice_vault,
+                data={
+                    "service_name": "github",
+                    "login_username": "alice",
+                    "password": "plain-secret",
+                },
+            )
+
+    def test_create_rejects_category_owned_by_another_user(self):
+        with self.assertRaises(CategoryOwnershipMismatch):
+            CredentialService.create(
+                vault=self.alice_vault,
+                data={
+                    "service_name": "Other service",
+                    "login_username": "alice",
+                    "category": self.bob_category,
+                    "password": "plain-secret",
+                },
+            )
+
+    def test_update_rejects_category_owned_by_another_user(self):
+        credential = self.create_credential()
+        with self.assertRaises(CategoryOwnershipMismatch):
+            CredentialService.update(
+                credential=credential,
+                data={"category": self.bob_category},
+            )

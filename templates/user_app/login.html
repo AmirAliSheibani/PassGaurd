@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+  <div class="auth-shell-placeholder">
+    <section class="form-card" aria-labelledby="loginHeading">
+      <header class="form-card-header">
+        <p class="eyebrow"><span class="eyebrow-mark"></span>WELCOME BACK</p>
+        <h1 id="loginHeading">Sign in to PassGuard</h1>
+        <p>Use your username and master password to open your workspace.</p>
+      </header>
+      <div class="form-card-body">
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% include "partials/_form_fields.html" with form=form form_layout="single" %}
+          <div class="form-actions">
+            <button class="button button-primary button-block" type="submit">Sign in {% include "partials/_icon.html" with name="arrow-right" %}</button>
+          </div>
+        </form>
+        <div class="page-stack auth-extra-links">
+          <p class="form-footnote">Forgot your master password? You need a valid, unused backup code to start recovery.</p>
+          <a class="inline-link" href="{% url 'user_app:recovery' %}">Recover account with a backup code</a>
+          <p class="form-footnote">New to PassGuard? <a class="inline-link" href="{% url 'user_app:register' %}">Create an account</a></p>
+        </div>
+      </div>
+    </section>
+  </div>
+{% endblock %}

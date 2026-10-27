@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Delete {{ vault.name }}{% endblock %}
+{% block content %}
+  {% include "partials/_page_header.html" with kicker="Vaults" heading="Delete vault" description="Review the impact before permanently deleting this vault." %}
+  <section class="form-card">
+    <div class="form-card-body">
+      <div class="danger-panel" role="alert">
+        {% include "partials/_icon.html" with name="alert-triangle" %}
+        <div>
+          <strong>Delete “{{ vault.name }}” permanently?</strong>
+          <p>The vault and the credentials stored inside it will be deleted. This action cannot be undone.</p>
+        </div>
+      </div>
+      <dl class="detail-fields detail-fields--spaced">
+        <div class="detail-field"><dt class="detail-field-label">Vault name</dt><dd class="detail-value">{{ vault.name }}</dd></div>
+        <div class="detail-field"><dt class="detail-field-label">Default vault</dt><dd class="detail-value">{{ vault.is_default|yesno:"Yes,No" }}</dd></div>
+      </dl>
+      <form method="post" class="form-actions">
+        {% csrf_token %}
+        <a class="button button-secondary" href="{{ vault.get_absolute_url }}">Keep vault</a>
+        <button class="button button-danger" type="submit" data-confirm="Delete this vault and every credential inside it?">Delete vault</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}
