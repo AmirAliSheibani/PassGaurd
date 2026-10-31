@@ -45,13 +45,14 @@ class PasswordGeneratorTests(SimpleTestCase):
         self.assertTrue(
             code.isdigit()
         )
-
-    def test_numeric_generator_rejects_non_positive_lengths(self):
-        for length in (0, -1):
-            with self.subTest(length=length):
+    def test_numeric_generator_rejects_non_positive_and_non_integer_lengths(self):
+        for invalid_length in (0, -1, True, 1.5, "12"):
+            with self.subTest(length=invalid_length):
                 with self.assertRaises(ValueError):
-                    PasswordGenerator.generate_numeric(length=length)
+                    PasswordGenerator.generate_numeric(length=invalid_length)
 
-    def test_password_generator_rejects_non_integer_lengths(self):
-        with self.assertRaises(TypeError):
-            PasswordGenerator.generate_numeric(length=1.5)
+    def test_regular_generator_rejects_boolean_and_non_integer_lengths(self):
+        for invalid_length in (True, 16.5, "16"):
+            with self.subTest(length=invalid_length):
+                with self.assertRaises(ValueError):
+                    PasswordGenerator.generate(length=invalid_length)

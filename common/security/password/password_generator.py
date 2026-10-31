@@ -3,64 +3,101 @@ import string
 
 
 class PasswordGenerator:
-    """Generate cryptographically secure passwords and numeric recovery codes."""
+    """
+    Generates secure random passwords.
+    """
 
     DEFAULT_LENGTH = 16
 
     UPPERCASE = string.ascii_uppercase
     LOWERCASE = string.ascii_lowercase
     NUMBERS = string.digits
-    SYMBOLS = "!@#$%^&*_-+.="
-
-    @classmethod
-    def _validate_length(cls, length: int, *, minimum: int) -> None:
-        if isinstance(length, bool) or not isinstance(length, int):
-            raise TypeError("Length must be an integer.")
-        if length < minimum:
-            raise ValueError(f"Length must be at least {minimum} characters.")
+    SYMBOLS = "!@#$%^&*_-+=."
 
     @classmethod
     def generate(cls, length: int = DEFAULT_LENGTH) -> str:
-        """Generate a password with at least one of each character class."""
-        cls._validate_length(length, minimum=cls.DEFAULT_LENGTH)
+        """
+        Generate a cryptographically secure password.
+        """
+        if isinstance(length, bool) or not isinstance(length, int):
+            raise ValueError("Password length must be an integer.")
+
+        if length < cls.DEFAULT_LENGTH:
+            raise ValueError(
+                f"Password length must be at least {cls.DEFAULT_LENGTH} characters"
+            )
 
         required = [
             secrets.choice(cls.UPPERCASE),
             secrets.choice(cls.LOWERCASE),
             secrets.choice(cls.NUMBERS),
             secrets.choice(cls.SYMBOLS),
+        ] # Example: ["K", "m", "7", "@"]
+
+        all_characters = (
+            cls.UPPERCASE
+            + cls.LOWERCASE
+            + cls.NUMBERS
+            + cls.SYMBOLS
+        ) # Result: ["ABCDE...abcde...01234...!@#$..."]
+
+        remaining = [
+            secrets.choice(all_characters)
+            for _ in range(length - len(required)) # 16 - 4
         ]
-        alphabet = cls.UPPERCASE + cls.LOWERCASE + cls.NUMBERS + cls.SYMBOLS
-        required.extend(secrets.choice(alphabet) for _ in range(length - len(required)))
-        secrets.SystemRandom().shuffle(required)
-        return "".join(required)
+
+        password_chars = required + remaining # 12 + 4
+        shuffled_password = []
+
+        while password_chars:
+            random_index = secrets.randbelow(len(password_chars)) # Example: 16, random_index = 3
+            shuffled_password.append(
+                password_chars.pop(random_index)
+            )
+
+        return "".join(shuffled_password)
+
 
     @classmethod
     def generate_numeric(cls, length: int = DEFAULT_LENGTH) -> str:
-        """Generate an ASCII numeric string, preserving any leading zeroes."""
-        cls._validate_length(length, minimum=1)
+        """
+        Generate a cryptographically secure numeric code.
+        """
+        if isinstance(length, bool) or not isinstance(length, int) or length < 1:
+            raise ValueError("Password length must be greater than 0")
+
         return "".join(secrets.choice(cls.NUMBERS) for _ in range(length))
+
 
     @classmethod
     def calculate_strength(cls, password: str) -> str:
-        """Return a coarse UI estimate, not a measure of password entropy."""
+        """
+        Calculates the strength of a password.
+        """
         score = 0
+
         if any(char.islower() for char in password):
             score += 1
+
         if any(char.isupper() for char in password):
             score += 1
+
         if any(char.isdigit() for char in password):
             score += 1
+
         if any(char in cls.SYMBOLS for char in password):
             score += 1
-        if len(password) >= cls.DEFAULT_LENGTH:
+
+        if len(password) >= 16:
             score += 1
 
-        return {
+        levels = {
             0: "bad",
             1: "weak",
             2: "medium",
             3: "good",
             4: "strong",
             5: "extreme",
-        }[score]
+        }
+
+        return levels.get(score, "bad")

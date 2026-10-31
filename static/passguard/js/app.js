@@ -172,6 +172,82 @@
     });
   }
 
+  function setupCredentialPasswordReveal() {
+    document.addEventListener("click", function (event) {
+      var button = closest(event.target, "[data-password-reveal]");
+      var container;
+      var form;
+      var output;
+      var csrfInput;
+      var toggleButton;
+      var copyButton;
+      var status;
+      var xhr;
+      var payload;
+
+      if (!button || button.disabled) return;
+      container = closest(button, "[data-password-display]");
+      if (!container) return;
+
+      form = $("[data-password-reveal-form]", container);
+      output = $("[data-password-output]", container);
+      csrfInput = form ? $("input[name=csrfmiddlewaretoken]", form) : null;
+      toggleButton = $("[data-password-toggle]", container);
+      copyButton = $("[data-copy-target]", container);
+      status = $("[data-password-reveal-status]", container);
+
+      if (!form || !form.action || !output || !csrfInput) {
+        showToast("Password reveal is not configured correctly.", "error");
+        return;
+      }
+
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (status) status.textContent = "Requesting password securely…";
+
+      xhr = new XMLHttpRequest();
+      xhr.open("POST", form.action, true);
+      xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+      xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4) return;
+
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            payload = JSON.parse(xhr.responseText);
+          } catch (_error) {
+            payload = null;
+          }
+
+          if (payload && typeof payload.password === "string") {
+            output.value = payload.password;
+            button.hidden = true;
+            if (toggleButton) toggleButton.hidden = false;
+            if (copyButton) copyButton.disabled = false;
+            if (status) status.textContent = "Password loaded. Use the eye button to show or hide it.";
+            showToast("Password loaded.");
+            return;
+          }
+        }
+
+        if (status) status.textContent = "The password could not be loaded. Sign in again if your session expired.";
+        showToast("Unable to load the password. Please try again.", "error");
+      };
+      xhr.send("csrfmiddlewaretoken=" + encodeURIComponent(csrfInput.value));
+    });
+
+    // Clear plaintext from the live DOM when the user leaves or reloads the page.
+    window.addEventListener("pagehide", function () {
+      forEach($$("[data-password-output]"), function (input) {
+        input.value = "";
+        input.type = "password";
+      });
+    });
+  }
+
   function setupPasswordVisibility() {
     document.addEventListener("click", function (event) {
       var button = closest(event.target, "[data-password-toggle]");
@@ -473,15 +549,95 @@
     });
   }
 
+
+  function setupPrivatePageRestore() {
+    // Back-forward cache can retain rendered credential details in memory.
+    // Reloading asks the server to re-check the authenticated session.
+    window.addEventListener("pageshow", function (event) {
+      if (event && event.persisted) window.location.reload();
+    });
+  }
+
+  function setupCredentialBulkSelection() {
+    var masterCheckbox = $("[data-select-all]");
+    var selectedCount = $$("[data-credential-select]");
+    var countOutput = $("[data-selected-count]");
+    var moveButton = $("[data-bulk-move]");
+    var deleteButton = $("[data-bulk-delete]");
+    var targetVault = $("#bulkTargetVault");
+
+    function getSelected() {
+      var selected = [];
+      forEach(selectedCount, function (checkbox) {
+        if (checkbox.checked) selected.push(checkbox);
+      });
+      return selected;
+    }
+
+    function synchronize() {
+      var selected = getSelected();
+      var total = selectedCount.length;
+      var checked = selected.length;
+
+      if (countOutput) {
+        countOutput.textContent = checked + " selected";
+      }
+      if (moveButton) moveButton.disabled = checked === 0;
+      if (deleteButton) deleteButton.disabled = checked === 0;
+      if (masterCheckbox) {
+        masterCheckbox.checked = total > 0 && checked === total;
+        masterCheckbox.indeterminate = checked > 0 && checked < total;
+      }
+    }
+
+    if (!selectedCount.length) return;
+
+    forEach(selectedCount, function (checkbox) {
+      checkbox.addEventListener("change", synchronize);
+    });
+
+    if (masterCheckbox) {
+      masterCheckbox.addEventListener("change", function () {
+        forEach(selectedCount, function (checkbox) {
+          checkbox.checked = masterCheckbox.checked;
+        });
+        synchronize();
+      });
+    }
+
+    if (moveButton) {
+      moveButton.addEventListener("click", function (event) {
+        if (!getSelected().length || !targetVault || !targetVault.value) {
+          if (event.preventDefault) event.preventDefault();
+          showToast("Select credentials and a destination vault first.", "error");
+        }
+      });
+    }
+
+    if (deleteButton) {
+      deleteButton.addEventListener("click", function (event) {
+        if (!getSelected().length) {
+          if (event.preventDefault) event.preventDefault();
+          showToast("Select at least one credential first.", "error");
+        }
+      });
+    }
+
+    synchronize();
+  }
+
   function initialize() {
     setupSidebar();
     setupMessageDismissal();
     setupPasswordVisibility();
+    setupCredentialPasswordReveal();
     setupPasswordGenerator();
     setupCopyButtons();
     setupBackupCodeActions();
     setupConfirmations();
     setupSearchShortcut();
+    setupCredentialBulkSelection();
+    setupPrivatePageRestore();
   }
 
   if (document.readyState === "loading") {

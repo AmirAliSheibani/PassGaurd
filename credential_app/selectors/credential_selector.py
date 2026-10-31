@@ -5,41 +5,59 @@ from vault_app.models import Vault
 
 
 class CredentialSelector:
-    """Read-only queries for credentials.
-
-    Prefer the user-scoped methods from request-facing code. ``get_by_id`` is
-    intentionally unscoped and should only be used where authorization has
-    already been established by the caller.
-    """
+    """Read-only queries for credentials, always scoped explicitly when possible."""
 
     @classmethod
     def get_by_id(cls, credential_id: int) -> Credential:
-        return (
-            Credential.objects.select_related("vault", "vault__user", "category")
-            .get(pk=credential_id)
-        )
+        return Credential.objects.select_related(
+            "vault",
+            "vault__user",
+            "category",
+        ).get(pk=credential_id)
 
     @classmethod
     def get_by_id_for_user(cls, credential_id: int, user_id: int) -> Credential:
-        return (
-            Credential.objects.select_related("vault", "vault__user", "category")
-            .get(pk=credential_id, vault__user_id=user_id)
-        )
+        return Credential.objects.select_related(
+            "vault",
+            "vault__user",
+            "category",
+        ).get(pk=credential_id, vault__user_id=user_id)
 
     @classmethod
     def get_by_vault(cls, *, vault: Vault) -> QuerySet[Credential]:
-        return (
-            Credential.objects.filter(vault_id=vault.pk)
-            .select_related("category")
-        )
+        return Credential.objects.filter(vault_id=vault.pk).select_related(
+            "vault",
+            "category",
+        ).order_by("-updated_at", "-pk")
 
     @classmethod
-    def get_favorites(cls, *, vault: Vault) -> QuerySet[Credential]:
-        """Return favorite credentials for a single vault without N+1 category queries."""
-        return (
-            Credential.objects.filter(vault_id=vault.pk, is_favorite=True)
-            .select_related("category")
-        )
+    def get_favorites(cls, vault: Vault) -> QuerySet[Credential]:
+        return cls.get_by_vault(vault=vault).filter(is_favorite=True)
+
+    @classmethod
+    def get_all_for_user(cls, *, user_id: int) -> QuerySet[Credential]:
+        """Return every credential owned by a user across all of their vaults."""
+        return Credential.objects.filter(
+            vault__user_id=user_id,
+        ).select_related(
+            "vault",
+            "category",
+        ).order_by("-updated_at", "-pk")
+
+    @classmethod
+    def get_selected_for_user(
+        cls,
+        *,
+        credential_ids: list[int] | tuple[int, ...],
+        user_id: int,
+    ) -> QuerySet[Credential]:
+        """Return the selected credentials that are owned by the given user."""
+        if not credential_ids:
+            return Credential.objects.none()
+
+        return cls.get_all_for_user(user_id=user_id).filter(
+            pk__in=credential_ids,
+        ).order_by("pk")
 
     @classmethod
     def search(
@@ -49,42 +67,65 @@ class CredentialSelector:
         user_id: int,
         query: str,
     ) -> QuerySet[Credential]:
-        """Search credentials within a particular vault owned by ``user_id``."""
-        queryset = (
-            Credential.objects.filter(
-                vault_id=vault.pk,
-                vault__user_id=user_id,
-            )
-            .select_related("category")
+        """Search descriptive credential fields within one owned vault."""
+        queryset = Credential.objects.filter(
+            vault_id=vault.pk,
+            vault__user_id=user_id,
+        ).select_related(
+            "vault",
+            "category",
         )
-        normalized_query = query.strip()
-        if not normalized_query:
+
+        query = (query or "").strip()[:100]
+        if not query:
             return queryset
 
         return queryset.filter(
-            Q(service_name__icontains=normalized_query)
-            | Q(service_url__icontains=normalized_query)
-            | Q(login_username__icontains=normalized_query)
-            | Q(login_email__icontains=normalized_query)
-            | Q(category__name__icontains=normalized_query)
+            Q(service_name__icontains=query)
+            | Q(service_url__icontains=query)
+            | Q(login_username__icontains=query)
+            | Q(login_email__icontains=query)
+            | Q(category__name__icontains=query)
+        )
+
+    @classmethod
+    def search_for_user(
+        cls,
+        *,
+        user_id: int,
+        query: str,
+    ) -> QuerySet[Credential]:
+        """Search all of a user's vaults without exposing password material."""
+        queryset = cls.get_all_for_user(user_id=user_id)
+        query = (query or "").strip()[:100]
+
+        if not query:
+            return queryset
+
+        return queryset.filter(
+            Q(service_name__icontains=query)
+            | Q(service_url__icontains=query)
+            | Q(login_username__icontains=query)
+            | Q(login_email__icontains=query)
+            | Q(category__name__icontains=query)
+            | Q(vault__name__icontains=query)
         )
 
     @classmethod
     def exists_by_name(cls, *, vault: Vault, service_name: str) -> bool:
-        """Check names case-insensitively within the supplied vault."""
         return Credential.objects.filter(
             vault_id=vault.pk,
-            service_name__iexact=service_name.strip(),
+            service_name=service_name,
         ).exists()
 
     @classmethod
-    def count(cls, *, vault: Vault) -> int:
+    def count(cls, vault: Vault) -> int:
         return Credential.objects.filter(vault_id=vault.pk).count()
 
     @classmethod
-    def get_recent(cls, *, vault: Vault) -> QuerySet[Credential]:
-        return (
-            Credential.objects.filter(vault_id=vault.pk)
-            .select_related("category")
-            .order_by("-updated_at", "-pk")
-        )
+    def count_for_user(cls, *, user_id: int) -> int:
+        return Credential.objects.filter(vault__user_id=user_id).count()
+
+    @classmethod
+    def get_recent(cls, vault: Vault) -> QuerySet[Credential]:
+        return cls.get_by_vault(vault=vault).order_by("-updated_at")

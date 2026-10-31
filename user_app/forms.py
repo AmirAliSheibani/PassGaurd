@@ -1,6 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
-from django.contrib.auth import get_user_model, password_validation
+from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
@@ -33,27 +33,10 @@ class RegisterForm(forms.Form):
         if not username:
             raise ValidationError("Username is required")
 
-        try:
-            username = User._meta.get_field("username").clean(username, None)
-        except ValidationError as exc:
-            raise ValidationError(exc.messages)
-
         if User.objects.filter(username__iexact=username).exists():
             raise ValidationError("This username is already taken.")
 
         return username
-
-    def clean_password(self):
-        password = self.cleaned_data["password"]
-        username = self.cleaned_data.get("username", "")
-        try:
-            password_validation.validate_password(
-                password,
-                user=User(username=username),
-            )
-        except ValidationError as exc:
-            raise ValidationError(exc.messages)
-        return password
 
     def clean(self):
         cleaned_data = super().clean()
@@ -67,24 +50,12 @@ class RegisterForm(forms.Form):
 
 
 class ResetPasswordForm(forms.Form):
-    def __init__(self, *args, user=None, **kwargs):
-        self.user = user
-        super().__init__(*args, **kwargs)
-
     password = forms.CharField(min_length=12, strip=False, widget=forms.PasswordInput(attrs={
         'class': 'form-control', "placeholder": "Master password", "autocomplete": "new-password"
     }))
     confirm_password = forms.CharField(min_length=12, strip=False, widget=forms.PasswordInput(attrs={
         'class': 'form-control', "placeholder": "Confirm master password", "autocomplete": "new-password"
     }))
-
-    def clean_password(self):
-        password = self.cleaned_data["password"]
-        try:
-            password_validation.validate_password(password, user=self.user)
-        except ValidationError as exc:
-            raise ValidationError(exc.messages)
-        return password
 
     def clean(self):
         cleaned_data = super().clean()
@@ -121,7 +92,7 @@ class BackupCodeVerificationForm(forms.Form):
         code = self.cleaned_data["code"].strip()
 
         if not code.isascii() or not code.isdigit():
-            raise ValidationError("Backup code must contain ASCII digits only.")
+            raise ValidationError("backup code must contain only digits")
 
         if len(code) != 12:
             raise ValidationError("backup code must contain 12 digits")

@@ -16,6 +16,9 @@
       <a class="nav-item{% if active_nav == 'vaults' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'list' %} is-active{% endif %}" href="{% url 'vault_app:list' %}"{% if active_nav == 'vaults' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'list' %} aria-current="page"{% endif %}>
         {% include "partials/_icon.html" with name="vault" %}<span>Vaults</span>
       </a>
+      <a class="nav-item{% if request.resolver_match.namespace == 'credential_app' and request.resolver_match.url_name == 'global_list' %} is-active{% endif %}" href="{% url 'credential_app:global_list' %}"{% if request.resolver_match.namespace == 'credential_app' and request.resolver_match.url_name == 'global_list' %} aria-current="page"{% endif %}>
+        {% include "partials/_icon.html" with name="key-round" %}<span>All credentials</span>
+      </a>
       <a class="nav-item{% if active_nav == 'categories' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category_create' or request.resolver_match.url_name == 'category_update' or request.resolver_match.url_name == 'category_delete' %} is-active{% endif %}" href="{% url 'vault_app:categories' %}"{% if active_nav == 'categories' or request.resolver_match.namespace == 'vault_app' and request.resolver_match.url_name == 'categories' or request.resolver_match.url_name == 'category_create' or request.resolver_match.url_name == 'category_update' or request.resolver_match.url_name == 'category_delete' %} aria-current="page"{% endif %}>
         {% include "partials/_icon.html" with name="tag" %}<span>Categories</span>
       </a>

@@ -1,3 +1,4 @@
+import json
 
 from unittest.mock import patch
 
@@ -15,6 +16,7 @@ from credential_app.views import (
     CredentialListView,
     CredentialMoveToVaultView,
     CredentialRotatePasswordView,
+    CredentialRevealPasswordView,
     CredentialToggleFavoriteView,
     CredentialUpdateView,
 )
@@ -199,6 +201,7 @@ class CredentialViewTests(TestCase):
             (CredentialUpdateView, "get"),
             (CredentialDeleteView, "get"),
             (CredentialRotatePasswordView, "get"),
+            (CredentialRevealPasswordView, "post"),
             (CredentialMoveToVaultView, "get"),
             (CredentialToggleFavoriteView, "post"),
         ]
@@ -267,44 +270,76 @@ class CredentialViewTests(TestCase):
     # Detail
     # ---------------------------------------------------------
 
-    def test_detail_decrypts_password_for_owned_credential(self):
+    def test_detail_does_not_decrypt_or_embed_password_in_initial_response(self):
         with patch(
             "credential_app.views.EncryptionService.decrypt",
-            return_value="plain-test-password",
         ) as decrypt:
             response = self.dispatch_view(
                 CredentialDetailView,
                 pk=self.alice_credential.pk,
             )
 
-        decrypt.assert_called_once_with(
-            self.alice_credential.password_ciphertext,
-        )
-
+        decrypt.assert_not_called()
         self.assertEqual(
-            response.context_data["decrypted_password"],
-            "plain-test-password",
+            response.context_data["credential"],
+            self.alice_credential,
         )
-        self.assertFalse(
-            response.context_data["password_unavailable"]
-        )
+        self.assertIn("password_reveal_url", response.context_data)
+        self.assertNotIn("decrypted_password", response.context_data)
+        self.assertNotIn("password_unavailable", response.context_data)
 
-    def test_detail_handles_decryption_error(self):
+    def test_password_is_returned_only_by_explicit_reveal_post(self):
+        with patch(
+            "credential_app.views.EncryptionService.decrypt",
+            return_value="plain-test-password",
+        ) as decrypt:
+            response = self.dispatch_view(
+                CredentialRevealPasswordView,
+                method="post",
+                pk=self.alice_credential.pk,
+            )
+
+        decrypt.assert_called_once_with(self.alice_credential.password_ciphertext)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            json.loads(response.content),
+            {"password": "plain-test-password"},
+        )
+        self.assertIn("no-store", response.headers.get("Cache-Control", ""))
+
+    def test_password_reveal_handles_decryption_error(self):
         with patch(
             "credential_app.views.EncryptionService.decrypt",
             side_effect=EncryptionError("decryption failed"),
         ):
             response = self.dispatch_view(
-                CredentialDetailView,
+                CredentialRevealPasswordView,
+                method="post",
                 pk=self.alice_credential.pk,
             )
 
-        self.assertIsNone(
-            response.context_data["decrypted_password"]
+        self.assertEqual(response.status_code, 503)
+        self.assertIn("error", json.loads(response.content))
+
+    def test_password_reveal_get_is_not_allowed(self):
+        response = self.dispatch_view(
+            CredentialRevealPasswordView,
+            method="get",
+            pk=self.alice_credential.pk,
         )
-        self.assertTrue(
-            response.context_data["password_unavailable"]
-        )
+        self.assertEqual(response.status_code, 405)
+
+    def test_rendered_detail_page_never_contains_stored_ciphertext(self):
+        self.client.force_login(self.alice)
+        url = f"/vault/{self.alice.username}/{self.alice_vault.slug}/credentials/{self.alice_credential.pk}/"
+
+        with patch("credential_app.views.EncryptionService.decrypt") as decrypt:
+            response = self.client.get(url)
+
+        self.assertEqual(response.status_code, 200)
+        decrypt.assert_not_called()
+        self.assertContains(response, "Load password")
+        self.assertNotContains(response, self.alice_credential.password_ciphertext)
 
     def test_detail_response_is_marked_not_cacheable(self):
         response = self.dispatch_view(
@@ -570,6 +605,7 @@ class CredentialViewTests(TestCase):
         ):
             response = self.dispatch_view(
                 CredentialRotatePasswordView,
+    CredentialRevealPasswordView,
                 method="post",
                 pk=self.alice_credential.pk,
                 data={
@@ -612,6 +648,7 @@ class CredentialViewTests(TestCase):
         ) as mock_render:
             response = self.dispatch_view(
                 CredentialRotatePasswordView,
+    CredentialRevealPasswordView,
                 method="post",
                 pk=self.alice_credential.pk,
                 data={

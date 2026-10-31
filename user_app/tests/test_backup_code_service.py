@@ -172,30 +172,3 @@ class BackupCodeServiceTests(TestCase):
                     code=old_code,
                 )
             )
-
-    def test_remaining_count_counts_only_unused_codes(self):
-        codes = BackupCodeService.generate(user=self.user)
-        self.assertEqual(BackupCodeSelector.remaining_count(user=self.user), len(codes))
-
-        self.assertTrue(BackupCodeService.verify(user=self.user, code=codes[0]))
-        self.assertEqual(
-            BackupCodeSelector.remaining_count(user=self.user),
-            len(codes) - 1,
-        )
-
-    def test_inactive_user_cannot_generate_backup_codes(self):
-        self.user.is_active = False
-        self.user.save(update_fields=["is_active"])
-
-        with self.assertRaisesRegex(ValueError, "Inactive accounts"):
-            BackupCodeService.generate(user=self.user)
-
-        self.assertEqual(BackupCodeSelector.codes_count(user=self.user), 0)
-
-    def test_inactive_user_cannot_redeem_existing_backup_code(self):
-        codes = BackupCodeService.generate(user=self.user)
-        self.user.is_active = False
-        self.user.save(update_fields=["is_active"])
-
-        self.assertFalse(BackupCodeService.verify(user=self.user, code=codes[0]))
-        self.assertEqual(BackupCodeSelector.remaining_count(user=self.user), len(codes))

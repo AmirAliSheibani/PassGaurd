@@ -293,3 +293,28 @@
     .form-field-textarea, .form-field-checkbox { grid-column: auto; }
   }
 }
+
+/* Responsive behavior for global search and bulk credential controls. */
+@media (max-width: 820px) {
+  .bulk-action-bar { align-items: stretch; flex-direction: column; }
+  .bulk-selection-status { min-width: 0; }
+  .bulk-action-controls { justify-content: flex-start; }
+  .bulk-target-vault { flex: 1 1 180px; min-width: 0; }
+}
+@media (max-width: 640px) {
+  .inline-search-form { align-items: stretch; flex-wrap: wrap; }
+  .inline-search-form input[type="search"] { flex-basis: calc(100% - 35px); }
+  .inline-search-form .button { flex: 1 1 auto; }
+  .bulk-action-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); width: 100%; }
+  .bulk-target-vault { grid-column: 1 / -1; width: 100%; min-height: 44px; }
+  .bulk-action-controls .button { width: 100%; min-height: 44px; }
+  .credential-select-cell { justify-content: flex-start !important; }
+  .credential-select-cell::before { display: none !important; }
+  .credential-select-label { min-width: 44px; min-height: 44px; justify-content: flex-start; }
+  .credentials-table .credential-select-heading { display: none; }
+  .bulk-delete-list { padding-right: 15px; padding-left: 15px; }
+  .bulk-delete-form { padding: 16px 15px; }
+  .bulk-delete-form .form-actions { flex-direction: column-reverse; }
+  .bulk-delete-form .form-actions .button { width: 100%; min-height: 46px; }
+  .pagination { justify-content: space-between; gap: 8px; }
+}

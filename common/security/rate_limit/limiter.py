@@ -80,9 +80,6 @@ class RateLimiter:
         """
 
 
-        if limit < 1:
-            raise ValueError("Rate limit must be greater than zero.")
-
         key = cls._build_key(
             action=action,
             identifier=identifier,

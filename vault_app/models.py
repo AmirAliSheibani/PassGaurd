@@ -1,6 +1,6 @@
+from uuid import uuid4
+
 from django.db import models
-from django.db.models.functions import Lower
-import uuid
 
 from user_app.models import CustomUser
 from django.utils.text import slugify
@@ -23,9 +23,7 @@ class Vault(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                Lower("name"),
-                "user",
-                name="unique_user_vault_name_ci",
+                fields=['user', 'name'], name='unique_user_vault_name'
             ),
             models.UniqueConstraint(
                 fields=['user', 'slug'], name='unique_user_vault_slug'
@@ -51,7 +49,10 @@ class Vault(models.Model):
         self.name = self.name.capitalize()
 
         if not self.slug:
-            self.slug = slugify(self.name) or f"vault-{uuid.uuid4().hex[:8]}"
+            # slugify() returns an empty string for names written entirely in
+            # scripts that aren't transliterated by Django. Keep SlugField
+            # ASCII-compatible while still allowing those Vault names.
+            self.slug = slugify(self.name) or f"vault-{uuid4().hex[:10]}"
 
         super().save(*args, **kwargs)
 
@@ -78,9 +79,7 @@ class Category(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                Lower("name"),
-                "user",
-                name="unique_user_category_name_ci",
+                fields=['user', 'name'], name='unique_user_category_name'
             )
         ]
 

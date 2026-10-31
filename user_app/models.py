@@ -1,7 +1,6 @@
 from django.utils import timezone
 
 from django.db import models
-from django.db.models.functions import Lower
 from django.contrib.auth.models import AbstractUser
 # Create your models here.
 
@@ -21,12 +20,8 @@ class CustomUser(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True, blank=True, null=True)
 
     class Meta:
-        ordering = ["-created_at"]
-        constraints = [
-            models.UniqueConstraint(
-                Lower("username"),
-                name="unique_username_case_insensitive",
-            ),
+        ordering = [
+            "-created_at"
         ]
 
     def __str__(self):

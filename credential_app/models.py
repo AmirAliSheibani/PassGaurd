@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from django.db import models
-from django.db.models.functions import Lower
 
 from vault_app.models import Vault, Category
 
@@ -25,9 +24,8 @@ class Credential(models.Model):
 
         constraints = [
             models.UniqueConstraint(
-                Lower("service_name"),
-                "vault",
-                name="unique_service_per_vault_ci",
+                fields=["vault", "service_name"],
+                name="unique_service_per_vault",
             )
         ]
 

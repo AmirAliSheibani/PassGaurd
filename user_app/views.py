@@ -1,5 +1,4 @@
 from django.shortcuts import render, redirect
-from django.core.exceptions import ValidationError
 from django.contrib.auth import authenticate, login, logout
 from django.views import View
 
@@ -9,6 +8,14 @@ from user_app.forms import LoginForm, RegisterForm, BackupCodeConfirmationForm, 
 from user_app.selectors.user_selector import UserSelector
 from user_app.services.backup_code_service import BackupCodeService
 from user_app.services.user_services import UserService
+from common.security.session import (
+    AUTH_SESSION_MODE,
+    SESSION_MODE_BACKUP_SETUP,
+    SESSION_MODE_NORMAL,
+    complete_backup_code_setup_session,
+    start_authenticated_session,
+    start_recovery_session,
+)
 
 from common.security.rate_limit.exceptions import RateLimitExceeded, CooldownActive
 from common.security.rate_limit.limiter import RateLimiter
@@ -55,15 +62,13 @@ class LoginView(View):
             form.add_error(None, "Too many attempts. Please try again later.")
             return render(request, self.template_name, {'form': form})
 
-        # The database enforces case-insensitive username uniqueness. Resolve the
-        # stored spelling before authentication so login behaves consistently with
-        # registration, selectors, and account recovery on case-sensitive databases.
-        matched_user = UserSelector.get_by_username_if_active(username=username)
-        username_for_auth = matched_user.username if matched_user is not None else username
-
+        matching_user = UserSelector.get_by_username(username=username)
+        authentication_username = (
+            matching_user.get_username() if matching_user is not None else username
+        )
         user = authenticate(
             request=request,
-            username=username_for_auth,
+            username=authentication_username,
             password=password,
         )
 
@@ -82,8 +87,10 @@ class LoginView(View):
         login(request, user)
         if not user.recovery_setup_completed:
             request.session["backup_code_setup_pending"] = True
+            start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
             return redirect("user_app:backup_code_setup")
 
+        start_authenticated_session(request, mode=SESSION_MODE_NORMAL)
         return redirect("core:home")
 
 
@@ -111,16 +118,13 @@ class RegisterView(View):
         if not form.is_valid():
             return render(request, self.template_name, {'form': form})
 
-        try:
-            user = UserService.register(
-                username=form.cleaned_data['username'],
-                password=form.cleaned_data['password']
-            )
-        except (ValueError, ValidationError) as exc:
-            form.add_error(None, str(exc))
-            return render(request, self.template_name, {'form': form})
-
+        user = UserService.register(
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password']
+        )
         login(request, user)
+        request.session["backup_code_setup_pending"] = True
+        start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
         return redirect("user_app:backup_code_setup")
 
 
@@ -145,10 +149,11 @@ class BackupCodeSetupView(View):
             codes = request.session['backup_codes']
 
         request.session["backup_code_setup_pending"] = True
+        if request.session.get(AUTH_SESSION_MODE) != SESSION_MODE_BACKUP_SETUP:
+            start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
 
-        # Recovery codes are sensitive and should not remain available indefinitely in the server-side session.
-        request.session.set_expiry(600)
-
+        # The session middleware enforces the 10-minute setup deadline and
+        # the shorter inactivity timeout without extending the absolute limit.
         return render(request, self.template_name, {'codes': codes, 'form': BackupCodeConfirmationForm()})
 
     def post(self, request):
@@ -163,20 +168,13 @@ class BackupCodeSetupView(View):
             if not codes:
                 return redirect("user_app:backup_code_setup")
 
-            request.session.set_expiry(600)
             return render(request, self.template_name, {'codes': codes, 'form': form})
 
         # Finish setup
         UserService.mark_recovery_setup_completed(
             user=request.user,
         )
-        request.session.pop("backup_codes", None)
-        request.session.pop(
-            "backup_code_setup_pending",
-            None,
-        )
-
-        request.session.set_expiry(None)
+        complete_backup_code_setup_session(request)
         return redirect("core:home")
 
 
@@ -234,10 +232,10 @@ class BackupCodeRecoveryView(View):
                 {"form": form},
             )
 
-        user = UserSelector.get_by_username_if_active(username=username)
+        user = UserSelector.get_by_username(username=username)
 
-        # Deliberately do not reveal whether the username exists.
-        if user is None:
+        # Deliberately do not reveal whether the username exists or is active.
+        if user is None or not user.is_active:
             RateLimiter.record_failure(
                 action="recovery:username",
                 identifier=username.lower(),
@@ -264,12 +262,8 @@ class BackupCodeRecoveryView(View):
             identifier=username.lower(),
         )
 
-        # Prevent reuse of the previous anonymous session.
-        request.session.cycle_key()
-        request.session["recovery_user_id"] = user.pk
-        # Recovery authorization should be short-lived.
-        request.session.set_expiry(600)     
-
+        # Start a separate short-lived authorization state for password recovery.
+        start_recovery_session(request, user_id=user.pk)
         return redirect("user_app:reset_master_password")
 
 
@@ -286,12 +280,8 @@ class ResetMasterPasswordView(View):
         if not user_id:
             return redirect("user_app:recovery")
 
-        user = UserSelector.get_by_id_if_active(user_id=user_id)
-        if user is None:
-            request.session.flush()
-            return redirect("user_app:recovery")
+        form = ResetPasswordForm()
 
-        form = ResetPasswordForm(user=user)
         return render(request, self.template_name, {'form': form})
 
     def post(self, request):
@@ -300,27 +290,23 @@ class ResetMasterPasswordView(View):
         if not user_id:
             return redirect("user_app:recovery")
 
+        form = ResetPasswordForm(request.POST)
+
+        if not form.is_valid():
+            return render(request, self.template_name, {'form': form})
+
         user = UserSelector.get_by_id_if_active(user_id=user_id)
+
         if user is None:
             request.session.flush()
             return redirect("user_app:recovery")
 
-        form = ResetPasswordForm(request.POST, user=user)
-        if not form.is_valid():
-            return render(request, self.template_name, {'form': form})
-
-        try:
-            UserService.change_password(user=user, new_password=form.cleaned_data['password'])
-        except (ValueError, ValidationError) as exc:
-            form.add_error("password", str(exc))
-            return render(request, self.template_name, {'form': form})
+        UserService.change_password(user=user, new_password=form.cleaned_data['password'])
 
         request.session.flush()
-
         login(request, user)
-
         request.session["backup_code_setup_pending"] = True
-        request.session.set_expiry(600)
+        start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
 
         return redirect("user_app:backup_code_setup")
 
@@ -374,6 +360,8 @@ class RegenerateBackupCodesView(View):
             return render(request, self.template_name, {'form': form})
 
         request.session["backup_codes"] = codes
+        request.session["backup_code_setup_pending"] = True
+        start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
 
         return redirect(
             "user_app:backup_code_setup"

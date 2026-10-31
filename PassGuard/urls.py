@@ -25,6 +25,6 @@ urlpatterns = [
     path("", include("core.urls")),
     path("", include("user_app.urls")),
     path("", include('vault_app.urls')),
-    path('vault/', include('credential_app.urls')),
+    path('', include('credential_app.urls')),
 
 ]

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Confirm bulk deletion{% endblock %}
+{% block content %}
+  <div class="page-header">
+    <div class="page-heading-copy">
+      <p class="page-kicker">SECURITY CONFIRMATION</p>
+      <h1 class="page-title">Delete {{ selected_credentials|length }} credentials?</h1>
+      <p class="page-description">This permanently deletes the selected credentials and their password history. This action cannot be undone.</p>
+    </div>
+  </div>
+
+  <section class="panel bulk-delete-panel" aria-labelledby="bulkDeleteHeading">
+    <div class="panel-header">
+      <div>
+        <h2 class="panel-title" id="bulkDeleteHeading">Selected credentials</h2>
+        <p class="panel-description">Review every item before confirming.</p>
+      </div>
+      <span class="badge badge-danger">Permanent deletion</span>
+    </div>
+    <ul class="bulk-delete-list">
+      {% for credential in selected_credentials %}
+        <li>
+          <span class="service-monogram" aria-hidden="true">{{ credential.service_name|slice:":1"|upper }}</span>
+          <span class="bulk-delete-item-copy">
+            <strong>{{ credential.service_name }}</strong>
+            <span>{{ credential.vault.name }} vault · {{ credential.login_username }}</span>
+          </span>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <form method="post" action="{% url 'credential_app:bulk_delete' %}" class="stacked-form bulk-delete-form">
+      {% csrf_token %}
+      <input type="hidden" name="stage" value="confirm">
+      <input type="hidden" name="return_to" value="{{ return_to }}">
+      <input type="hidden" name="selection_token" value="{{ selection_token }}">
+      {% if form.non_field_errors %}
+        <div class="form-errors" role="alert">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-field">
+        <label for="id_master_password">Master password</label>
+        {{ form.master_password }}
+        {% if form.master_password.errors %}<div class="field-error" role="alert">{{ form.master_password.errors }}</div>{% endif %}
+        <p class="field-help">Re-enter your PassGuard master password to authorize this deletion.</p>
+      </div>
+      <label class="confirmation-check">
+        {{ form.confirm_delete }}
+        <span>{{ form.confirm_delete.label }}</span>
+      </label>
+      {% if form.confirm_delete.errors %}<div class="field-error" role="alert">{{ form.confirm_delete.errors }}</div>{% endif %}
+      <div class="form-actions">
+        <a class="button button-secondary" href="{{ return_to }}">Cancel</a>
+        <button class="button button-danger" type="submit" data-confirm="Permanently delete {{ selected_credentials|length }} credentials and their password history?">
+          {% include "partials/_icon.html" with name="trash-2" %}<span>Delete {{ selected_credentials|length }} credentials permanently</span>
+        </button>
+      </div>
+    </form>
+  </section>
+{% endblock %}

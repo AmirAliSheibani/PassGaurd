@@ -1,10 +1,18 @@
-from django.conf import settings
 from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.sessions.backends.db import SessionStore
 from django.test import RequestFactory, TestCase
+
+from common.security.session import (
+    AUTH_SESSION_MODE,
+    AUTH_SESSION_STARTED_AT,
+    RECOVERY_SESSION_STARTED_AT,
+    SESSION_MODE_BACKUP_SETUP,
+    SESSION_MODE_NORMAL,
+    start_authenticated_session,
+)
 
 from common.security.rate_limit.exceptions import RateLimitExceeded, CooldownActive
 from user_app.views import (
@@ -581,10 +589,12 @@ class UserViewTests(TestCase):
             request.session["backup_code_setup_pending"]
         )
 
+        self.assertTrue(request.session.get_expire_at_browser_close())
         self.assertEqual(
-            request.session.get_expiry_age(),
-            600,
+            request.session[AUTH_SESSION_MODE],
+            SESSION_MODE_BACKUP_SETUP,
         )
+        self.assertIn(AUTH_SESSION_STARTED_AT, request.session)
 
         mock_generate.assert_called_once_with(
             user=self.user,
@@ -610,6 +620,8 @@ class UserViewTests(TestCase):
         )
 
         request.session["backup_codes"] = codes
+        request.session["backup_code_setup_pending"] = True
+        start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
 
         response = BackupCodeSetupView.as_view()(request)
 
@@ -718,6 +730,8 @@ class UserViewTests(TestCase):
         ]
 
         request.session["backup_codes"] = codes
+        request.session["backup_code_setup_pending"] = True
+        start_authenticated_session(request, mode=SESSION_MODE_BACKUP_SETUP)
 
         response = BackupCodeSetupView.as_view()(request)
 
@@ -728,9 +742,10 @@ class UserViewTests(TestCase):
             codes,
         )
 
+        self.assertTrue(request.session.get_expire_at_browser_close())
         self.assertEqual(
-            request.session.get_expiry_age(),
-            600,
+            request.session[AUTH_SESSION_MODE],
+            SESSION_MODE_BACKUP_SETUP,
         )
 
         mock_render.assert_called_once()
@@ -778,10 +793,11 @@ class UserViewTests(TestCase):
             request.session,
         )
 
-        # set_expiry(None) restores Django's default session lifetime.
+        # The completed setup becomes a normal browser-close session.
+        self.assertTrue(request.session.get_expire_at_browser_close())
         self.assertEqual(
-            request.session.get_expiry_age(),
-            settings.SESSION_COOKIE_AGE,
+            request.session[AUTH_SESSION_MODE],
+            SESSION_MODE_NORMAL,
         )
 
         mock_mark_setup.assert_called_once_with(
@@ -911,7 +927,7 @@ class UserViewTests(TestCase):
 
     @patch("user_app.views.render", side_effect=fake_render)
     @patch("user_app.views.BackupCodeVerificationForm")
-    @patch("user_app.views.UserSelector.get_by_username_if_active", return_value=None)
+    @patch("user_app.views.UserSelector.get_by_username", return_value=None)
     @patch("user_app.views.RateLimiter.record_failure")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -958,7 +974,7 @@ class UserViewTests(TestCase):
     @patch("user_app.views.render", side_effect=fake_render)
     @patch("user_app.views.BackupCodeVerificationForm")
     @patch("user_app.views.BackupCodeService.verify", return_value=False)
-    @patch("user_app.views.UserSelector.get_by_username_if_active")
+    @patch("user_app.views.UserSelector.get_by_username")
     @patch("user_app.views.RateLimiter.record_failure")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -1012,7 +1028,7 @@ class UserViewTests(TestCase):
 
     @patch("user_app.views.redirect", side_effect=fake_redirect)
     @patch("user_app.views.BackupCodeService.verify", return_value=True)
-    @patch("user_app.views.UserSelector.get_by_username_if_active")
+    @patch("user_app.views.UserSelector.get_by_username")
     @patch("user_app.views.RateLimiter.reset")
     @patch("user_app.views.RateLimiter.check")
     @patch("user_app.views.RateLimiter.consume")
@@ -1062,10 +1078,8 @@ class UserViewTests(TestCase):
             self.user.pk,
         )
 
-        self.assertEqual(
-            request.session.get_expiry_age(),
-            600,
-        )
+        self.assertTrue(request.session.get_expire_at_browser_close())
+        self.assertIn(RECOVERY_SESSION_STARTED_AT, request.session)
 
         mock_reset.assert_called_once_with(
             action="recovery:username",
@@ -1187,9 +1201,10 @@ class UserViewTests(TestCase):
             request.session["backup_code_setup_pending"]
         )
 
+        self.assertTrue(request.session.get_expire_at_browser_close())
         self.assertEqual(
-            request.session.get_expiry_age(),
-            600,
+            request.session[AUTH_SESSION_MODE],
+            SESSION_MODE_BACKUP_SETUP,
         )
 
         mock_change_password.assert_called_once_with(

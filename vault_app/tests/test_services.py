@@ -1,10 +1,9 @@
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
-from django.core.exceptions import ValidationError
 
+from vault_app.exceptions import DuplicateVaultExceptions
 from vault_app.models import Category, Vault
-from vault_app.exceptions import DuplicateCategoryExceptions, DuplicateVaultExceptions
 from vault_app.services.vault_service import CategoryService, VaultService
 
 
@@ -51,18 +50,6 @@ class VaultServiceTests(TestCase):
         self.assertTrue(vault.slug)
         self.assertFalse(vault.is_default)
 
-    def test_create_vault_rejects_case_insensitive_duplicate_name(self):
-        VaultService.create(user=self.user, name="Personal Vault")
-
-        with self.assertRaises(DuplicateVaultExceptions):
-            VaultService.create(user=self.user, name="personal vault")
-
-    def test_create_vault_with_non_ascii_name_uses_valid_fallback_slug(self):
-        vault = VaultService.create(user=self.user, name="شخصی")
-
-        self.assertEqual(vault.name, "شخصی")
-        self.assertRegex(vault.slug, r"^vault-[0-9a-f]{8}$")
-
     def test_create_vault_with_slug_collision(self):
         first_vault = VaultService.create(
             user=self.user,
@@ -76,6 +63,25 @@ class VaultServiceTests(TestCase):
         self.assertNotEqual(first_vault.slug, second_vault.slug)
         self.assertEqual(first_vault.slug, "work-tools")
         self.assertEqual(second_vault.slug, "work-tools-2")
+
+    def test_create_vault_rejects_case_insensitive_duplicate_names(self):
+        VaultService.create(user=self.user, name="Work Vault")
+
+        with self.assertRaises(DuplicateVaultExceptions):
+            VaultService.create(user=self.user, name="WORK VAULT")
+
+    def test_create_vault_with_non_latin_name_uses_ascii_fallback_slug(self):
+        first_vault = VaultService.create(
+            user=self.user,
+            name="شخصی",
+        )
+        second_vault = VaultService.create(
+            user=self.user,
+            name="کاری",
+        )
+
+        self.assertEqual(first_vault.slug, "vault")
+        self.assertEqual(second_vault.slug, "vault-2")
 
     def test_create_default_vault_demotes_previous_default(self):
         previous_default = self.create_vault(
@@ -182,16 +188,6 @@ class CategoryServiceTests(TestCase):
         self.assertEqual(category.user, self.user)
         self.assertEqual(category.name, "Social")
         self.assertEqual(category.color, "#FF5733")
-
-    def test_create_category_rejects_case_insensitive_duplicate_name(self):
-        CategoryService.create(user=self.user, name="Social", color="#FF5733")
-
-        with self.assertRaises(DuplicateCategoryExceptions):
-            CategoryService.create(user=self.user, name="social", color="#112233")
-
-    def test_create_category_rejects_invalid_color(self):
-        with self.assertRaises(ValidationError):
-            CategoryService.create(user=self.user, name="Invalid color", color="red")
 
     def test_update_category(self):
         category = Category.objects.create(

@@ -58,6 +58,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'common.middleware.session_security.SessionSecurityMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -66,8 +67,7 @@ ROOT_URLCONF = 'PassGuard.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates']
-        ,
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -141,6 +141,21 @@ FERNET_KEY = env("FERNET_KEY")
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# PassGuard session policy. The cookie is browser-session-only, while the
+# server-side session record expires after 10 minutes without modification.
+# SessionSecurityMiddleware separately enforces a 1-hour absolute lifetime.
+SESSION_COOKIE_AGE = 600
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_SAVE_EVERY_REQUEST = False
+
+PASSGUARD_SESSION_IDLE_TIMEOUT = 600       # 10 minutes without a request.
+PASSGUARD_SESSION_MAX_AGE = 3600            # 1 hour absolute lifetime.
+PASSGUARD_SETUP_SESSION_MAX_AGE = 600       # 10-minute backup-code setup.
+PASSGUARD_RECOVERY_SESSION_MAX_AGE = 600    # 10-minute account recovery.
 
 
 CACHES = {
